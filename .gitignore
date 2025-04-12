@@ -4,3 +4,4 @@ venv/
 env/
 
 uv.lock
+notes.md
