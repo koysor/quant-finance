@@ -5,3 +5,4 @@ env/
 
 uv.lock
 notes.md
+app*/pages/*_.py
