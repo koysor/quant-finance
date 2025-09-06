@@ -8,14 +8,14 @@ st.markdown("### The Greeks - Gamma")
 st.markdown("#### Gamma")
 
 st.write(
-    "Gamma, $\Gamma$, is the rate of change of delta of an option.  It measures the curvature of the option price function that is not captured by delta.  It is the second derivative of the option price with respect to the underlying asset price.  I.e. the sensitivity of the delta to the underlying stock price."
+    r"Gamma, $$\Gamma$$, is the rate of change of delta of an option.  It measures the curvature of the option price function that is not captured by delta.  It is the second derivative of the option price with respect to the underlying asset price.  I.e. the sensitivity of the delta to the underlying stock price."
 )
 st.write("Gamma is always positive for long options and negative for short options.")
 st.write(
     "Gamma is highest for at-the-money options and decreases as the option moves further in or out of the money."
 )
 st.write(
-    "It ca be thouht of as a measure of how often a position needs to be rebalanced in order to maintain a delta-neutral position ."
+    "It can be thouht of as a measure of how often a position needs to be rebalanced in order to maintain a delta-neutral position ."
 )
 
 with st.expander(label="Gamma", expanded=True):
