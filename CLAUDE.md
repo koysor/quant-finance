@@ -46,7 +46,16 @@ black .
 
 # Lint code
 ruff check .
+
+# Pre-commit hooks (automatically runs black and ruff on commit)
+pre-commit install        # Setup hooks (already done)
+pre-commit run --all-files  # Run hooks manually on all files
 ```
+
+### CI/CD
+- **GitHub Actions** - Automated code quality checks on push/PR
+- **Pre-commit hooks** - Local code quality enforcement
+- Workflow validates black formatting and ruff linting
 
 ### Environment
 - Python 3.10+ required (see `.python-version`)
@@ -62,6 +71,7 @@ ruff check .
 - **networkx** - Graph theory (used for binomial trees)
 - **black** - Code formatting
 - **ruff** - Linting
+- **pre-commit** - Git hooks for code quality (auto-runs black and ruff on commit)
 
 ## Code Patterns
 
