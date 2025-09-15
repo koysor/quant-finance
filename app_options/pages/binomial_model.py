@@ -1,6 +1,7 @@
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
+from typing import Tuple, Union
 
 
 st.set_page_config(layout="wide")
@@ -24,8 +25,11 @@ st.write(
 
 
 def draw_one_step_binomial_tree(
-    root_node: tuple, up_node: tuple, down_node: tuple, plot_title: str
-):
+    root_node: Tuple[str, Union[str, int, float]],
+    up_node: Tuple[str, Union[str, int, float]],
+    down_node: Tuple[str, Union[str, int, float]],
+    plot_title: str,
+) -> None:
     root_node_label, root_node_value = root_node
     up_node_label, up_node_value = up_node
     down_node_label, down_node_value = down_node
