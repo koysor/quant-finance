@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 st.markdown("### The Binomial Tree")
 
 
-def binomial_tree(n: int, p: int) -> nx.DiGraph:
+def binomial_tree(n: int, p: float) -> nx.DiGraph:
     """
     Generates a NetworkX binomial tree.
 
@@ -47,7 +47,7 @@ def binomial_tree(n: int, p: int) -> nx.DiGraph:
     return G
 
 
-def display_binomial_tree(n, p):
+def display_binomial_tree(n: int, p: float) -> None:
     """Generates and displays the binomial tree using Matplotlib in Streamlit."""
 
     G = binomial_tree(n, p)
