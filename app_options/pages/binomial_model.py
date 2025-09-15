@@ -117,7 +117,6 @@ with col2:
 col1, col2 = st.columns(2)
 
 with col1:
-
     st.markdown("##### Stock:")
     draw_one_step_binomial_tree(
         ("Initial Price", price_initial),
@@ -127,7 +126,6 @@ with col1:
     )
 
 with col2:
-
     st.markdown("##### Option:")
     draw_one_step_binomial_tree(
         ("100", ""),
@@ -196,7 +194,6 @@ and the underlying asset."""
 
 
 with st.expander("Binomial Model Assumptions"):
-
     st.write(
         "1. The underlying asset price can move up or down to one of two possible prices in each time step."
     )
