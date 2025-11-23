@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a quantitative finance educational repository that demonstrates Python implementations of financial models through interactive Streamlit web applications. The project contains two main applications:
+This is a quantitative finance educational repository that demonstrates Python implementations of financial models through interactive Streamlit web applications. The project contains four main applications:
 
 1. **Quantitative Finance App** (`app_quant_finance/`) - Educational content covering stochastic processes, Greeks, volatility modeling, risk management, and mathematical finance concepts
 2. **Options App** (`app_options/`) - Focused on options pricing models including binomial trees, Black-Scholes, and option payoffs
+3. **Fixed Income App** (`app_fixed_income/`) - Bond pricing and fixed income securities
+4. **Portfolio Management App** (`app_portfolio_management/`) - Modern Portfolio Theory, CAPM, and alpha analysis
 
 ## Architecture
 
@@ -21,8 +23,16 @@ The codebase follows a modular structure:
   - `options.py` - Main entry point
   - `pages/` - Options-specific pages (binomial model, pricing, payoffs, etc.)
 
-- **`src/`** - Core Python modules (currently empty directories for future expansion)
-  - `options/`, `portfolio_management/`, `stochastic/`, `value_at_risk/`
+- **`app_fixed_income/`** - Streamlit app for fixed income and bonds
+  - `fixed_income.py` - Main entry point
+  - `pages/` - Bond pricing and fixed income pages
+
+- **`app_portfolio_management/`** - Streamlit app for portfolio management
+  - `portfolio_management.py` - Main entry point
+  - `pages/` - MPT, CAPM, and alpha analysis pages
+
+- **`src/`** - Core Python modules and notebooks
+  - `notebooks/` - Python scripts for simulations and data analysis (GBM, distributions, yfinance)
 
 ## Development Commands
 
@@ -37,6 +47,12 @@ source .venv/bin/activate && streamlit run app_quant_finance/quantitative_financ
 ./launch_options_streamlit_app.sh
 # or manually:
 source .venv/bin/activate && streamlit run app_options/options.py
+
+# Fixed Income Streamlit app
+source .venv/bin/activate && streamlit run app_fixed_income/fixed_income.py
+
+# Portfolio Management Streamlit app
+source .venv/bin/activate && streamlit run app_portfolio_management/portfolio_management.py
 ```
 
 ### Code Quality
