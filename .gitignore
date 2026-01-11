@@ -3,6 +3,9 @@ venv/
 .venv/
 env/
 
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 uv.lock
 notes.md
 app*/pages/*_.py
