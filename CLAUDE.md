@@ -33,6 +33,7 @@ The codebase follows a modular structure:
 
 - **`src/`** - Core Python modules and notebooks
   - `notebooks/` - Python scripts for simulations and data analysis (GBM, distributions, yfinance)
+  - `options/`, `portfolio_management/`, `stochastic/`, `value_at_risk/` - Topic-specific modules
 
 ## Development Commands
 
@@ -41,18 +42,18 @@ The codebase follows a modular structure:
 # Quantitative Finance Streamlit app
 ./launch_quantfinance_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && streamlit run app_quant_finance/quantitative_finance.py
+source .venv/bin/activate && uv run streamlit run app_quant_finance/quantitative_finance.py
 
 # Options Streamlit app
 ./launch_options_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && streamlit run app_options/options.py
+source .venv/bin/activate && uv run streamlit run app_options/options.py
 
 # Fixed Income Streamlit app
-source .venv/bin/activate && streamlit run app_fixed_income/fixed_income.py
+source .venv/bin/activate && uv run streamlit run app_fixed_income/fixed_income.py
 
 # Portfolio Management Streamlit app
-source .venv/bin/activate && streamlit run app_portfolio_management/portfolio_management.py
+source .venv/bin/activate && uv run streamlit run app_portfolio_management/portfolio_management.py
 ```
 
 ### Code Quality
@@ -85,6 +86,9 @@ pre-commit run --all-files  # Run hooks manually on all files
 - **pandas** - Data manipulation
 - **scipy** - Scientific computing
 - **networkx** - Graph theory (used for binomial trees)
+- **yfinance** - Yahoo Finance market data
+- **duckdb** - Embedded analytical database
+- **jupyter** / **marimo** - Interactive notebook environments
 - **black** - Code formatting
 - **ruff** - Linting
 - **pre-commit** - Git hooks for code quality (auto-runs black and ruff on commit)
