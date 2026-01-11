@@ -27,7 +27,7 @@ st.write(
 
 
 st.markdown("##### Asset Pricing with a Wiener Process")
-st.write("Aseet pricess can be modelled as a **stochastic process**.")
+st.write("Asset prices can be modelled as a **stochastic process**.")
 
 latex_code = r"""
 dS(t) = \mu S(t) dt + \sigma S(t) dW(t)
