@@ -15,3 +15,6 @@ __pycache__/
 uv.lock
 notes.md
 app*/pages/*_.py
+
+# Claude Code local settings
+.claude/settings.local.json
