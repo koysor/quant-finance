@@ -99,36 +99,42 @@ ax.set_title(f"{option_position_type} Payoff Diagram", fontsize=14, fontweight="
 ax.legend(loc="best")
 ax.grid(True, alpha=0.3)
 
-# Display the plot in Streamlit
-st.pyplot(fig)
+# Create two columns: chart on left, text on right
+col_chart, col_text = st.columns([3, 2])
 
-# Display payoff formulas
-st.markdown("---")
-st.markdown("#### Payoff Formulas")
+with col_chart:
+    st.pyplot(fig)
 
-if option_position_type == "Long Call":
-    st.latex(r"\text{Payoff} = \max(S_T - K, 0) - \text{Premium}")
-    st.markdown("**Max Loss:** Premium paid (limited)")
-    st.markdown("**Max Profit:** Unlimited")
-elif option_position_type == "Short Call":
-    st.latex(r"\text{Payoff} = \text{Premium} - \max(S_T - K, 0)")
-    st.markdown("**Max Loss:** Unlimited")
-    st.markdown("**Max Profit:** Premium received (limited)")
-elif option_position_type == "Long Put":
-    st.latex(r"\text{Payoff} = \max(K - S_T, 0) - \text{Premium}")
-    st.markdown("**Max Loss:** Premium paid (limited)")
-    st.markdown(f"**Max Profit:** £{strike_price - premium:.2f} (if stock goes to £0)")
-else:  # Short Put
-    st.latex(r"\text{Payoff} = \text{Premium} - \max(K - S_T, 0)")
-    st.markdown(f"**Max Loss:** £{strike_price - premium:.2f} (if stock goes to £0)")
-    st.markdown("**Max Profit:** Premium received (limited)")
+with col_text:
+    st.markdown("#### Payoff Formulas")
 
-st.markdown(
-    f"""
+    if option_position_type == "Long Call":
+        st.latex(r"\text{Payoff} = \max(S_T - K, 0) - \text{Premium}")
+        st.markdown("**Max Loss:** Premium paid (limited)")
+        st.markdown("**Max Profit:** Unlimited")
+    elif option_position_type == "Short Call":
+        st.latex(r"\text{Payoff} = \text{Premium} - \max(S_T - K, 0)")
+        st.markdown("**Max Loss:** Unlimited")
+        st.markdown("**Max Profit:** Premium received (limited)")
+    elif option_position_type == "Long Put":
+        st.latex(r"\text{Payoff} = \max(K - S_T, 0) - \text{Premium}")
+        st.markdown("**Max Loss:** Premium paid (limited)")
+        st.markdown(
+            f"**Max Profit:** £{strike_price - premium:.2f} (if stock goes to £0)"
+        )
+    else:  # Short Put
+        st.latex(r"\text{Payoff} = \text{Premium} - \max(K - S_T, 0)")
+        st.markdown(
+            f"**Max Loss:** £{strike_price - premium:.2f} (if stock goes to £0)"
+        )
+        st.markdown("**Max Profit:** Premium received (limited)")
+
+    st.markdown(
+        f"""
 Where:
 - $S_T$ = Stock price at expiration
 - $K$ = Strike price (£{strike_price:.2f})
 - Premium = £{premium:.2f}
 - Break-even = £{break_even:.2f}
 """
-)
+    )
