@@ -25,9 +25,9 @@ st.write(
 
 
 def draw_one_step_binomial_tree(
-    root_node: Tuple[str, Union[str, int, float]],
-    up_node: Tuple[str, Union[str, int, float]],
-    down_node: Tuple[str, Union[str, int, float]],
+    root_node: Tuple[Union[str, int], Union[str, int, float]],
+    up_node: Tuple[Union[str, int], Union[str, int, float]],
+    down_node: Tuple[Union[str, int], Union[str, int, float]],
     plot_title: str,
 ) -> None:
     root_node_label, root_node_value = root_node
@@ -67,6 +67,7 @@ def draw_one_step_binomial_tree(
 
     plt.title(plot_title)
     st.pyplot(fig)
+    plt.close(fig)
 
 
 st.markdown("### Worked Example on a European Call Option")
@@ -118,6 +119,9 @@ with col2:
     st.latex(latex_code)
 
 
+payoff_up = max(price_up - price_strike, 0)
+payoff_down = max(price_down - price_strike, 0)
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -132,25 +136,25 @@ with col1:
 with col2:
     st.markdown("##### Option:")
     draw_one_step_binomial_tree(
-        ("100", ""),
-        (price_up, f"Payoff: {max(price_up - price_strike, 0)}"),
-        (price_down, f"Payoff: {max(price_down - price_strike, 0)}"),
+        (price_initial, ""),
+        (price_up, f"Payoff: {payoff_up}"),
+        (price_down, f"Payoff: {payoff_down}"),
         f"Call Option with Strike Price {price_strike}",
     )
 
 st.write(
-    f"If the stock prices moves up to **{price_up}**, the the value of the portfolio consisting of the **Option payoff** \
+    f"If the stock price moves up to **{price_up}**, the value of the portfolio consisting of the **Option payoff** \
          and the **Short Stock Position** is:"
 )
-latex_code = rf"""1 - \Delta * {price_up}"""
+latex_code = rf"""{payoff_up} - \Delta * {price_up}"""
 st.latex(latex_code)
 st.write(
     "With $$\\Delta$$ being the number of shares of the underlying stock to Short."
 )
 st.write(
-    f"If the stock prices moves down to **{price_down}**, the the value of the portfolio is:"
+    f"If the stock price moves down to **{price_down}**, the value of the portfolio is:"
 )
-latex_code = rf"""0 - \Delta * {price_down}"""
+latex_code = rf"""{payoff_down} - \Delta * {price_down}"""
 st.latex(latex_code)
 
 
@@ -167,15 +171,15 @@ st.write(
 )
 latex_code = rf"""
 \begin{{align*}}
-    1 - \Delta * {price_up} &= 0 - \Delta * {price_down} \\
+    {payoff_up} - \Delta * {price_up} &= {payoff_down} - \Delta * {price_down} \\
     ~ \\
-    1 &= \Delta * {price_up} - \Delta * {price_down} \\
+    {payoff_up} - {payoff_down} &= \Delta * {price_up} - \Delta * {price_down} \\
     ~ \\
-    1 &= \Delta * ({price_up} - {price_down}) \\
+    {payoff_up - payoff_down} &= \Delta * ({price_up} - {price_down}) \\
     ~ \\
-    \Delta &= \frac{{1}}{{{price_up} - {price_down}}} \\
+    \Delta &= \frac{{{payoff_up - payoff_down}}}{{{price_up} - {price_down}}} \\
     ~ \\
-    \Delta &= \frac{{1}}{{{price_up - price_down}}} \\
+    \Delta &= \frac{{{payoff_up - payoff_down}}}{{{price_up - price_down}}} \\
 \end{{align*}}
 """
 st.latex(latex_code)
@@ -202,19 +206,19 @@ with st.expander("Binomial Model Assumptions"):
         "1. The underlying asset price can move up or down to one of two possible prices in each time step."
     )
     st.write("2. Fractional trading is permitted.")
-    st.write("2. The risk-free rate is constant over the life of the option.")
+    st.write("3. The risk-free rate is constant over the life of the option.")
     st.write(
-        "3. The option can be exercised at any time before expiration (for American options)."
+        "4. The option can be exercised at any time before expiration (for American options)."
     )
     st.write(
-        "4. The model assumes that the option price is calculated at specific discrete time intervals."
+        "5. The model assumes that the option price is calculated at specific discrete time intervals."
     )
     st.write(
-        "5. The model assumes that the underlying asset price follows a random walk, which means that the future price is uncertain and can move in any direction."
+        "6. The model assumes that the underlying asset price follows a random walk, which means that the future price is uncertain and can move in any direction."
     )
     st.write(
-        "6. The model assumes that the underlying asset price follows a lognormal distribution, which means that the logarithm of the price follows a normal distribution."
+        "7. The model assumes that the underlying asset price follows a lognormal distribution, which means that the logarithm of the price follows a normal distribution."
     )
     st.write(
-        "7. The model assumes that the option price is a function of the underlying asset price, the strike price, the time to expiration, and the risk-free rate."
+        "8. The model assumes that the option price is a function of the underlying asset price, the strike price, the time to expiration, and the risk-free rate."
     )
