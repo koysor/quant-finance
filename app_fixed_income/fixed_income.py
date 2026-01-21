@@ -1,0 +1,5 @@
+import streamlit as st
+
+
+st.set_page_config(layout="wide")
+st.markdown("### An application to demonstrate Fixed Income concepts in Python.")
