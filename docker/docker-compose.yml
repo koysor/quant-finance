@@ -1,0 +1,43 @@
+# Docker Compose for local development and testing
+# Run all four Streamlit applications on different ports
+
+services:
+  quant-finance:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.quant-finance
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  options:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.options
+    ports:
+      - "8502:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  fixed-income:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.fixed-income
+    ports:
+      - "8503:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  portfolio-management:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.portfolio-management
+    ports:
+      - "8504:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
