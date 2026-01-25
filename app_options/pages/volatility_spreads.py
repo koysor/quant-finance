@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 st.set_page_config(layout="wide")
 st.markdown("### Volatility Spreads")
 
@@ -20,7 +19,7 @@ strategy = st.selectbox(
         "Diagonal Spreads",
     ],
     index=0,
-    help="Select a volatility spread strategy to visualize.",
+    help="Select a volatility spread strategy to visualise.",
 )
 
 st.markdown("---")
@@ -107,10 +106,10 @@ if strategy == "Straddle":
         st.markdown("#### Strategy Explanation")
         st.markdown(
             """
-**Straddle** involves buying both a call and a put option at the same strike price and expiration date.
+A **Straddle** involves buying both a call and a put option at the same strike price and expiration date.
 
 **When to use:** Traders use straddles when they expect significant price movement but are uncertain
-about the direction. Common before earnings announcements, FDA decisions, or major economic events.
+about the direction. Common before earnings announcements or major economic events.
 
 **How traders profit:**
 - The stock must move significantly in either direction beyond the break-even points
@@ -211,7 +210,7 @@ elif strategy == "Strangle":
         st.markdown("#### Strategy Explanation")
         st.markdown(
             """
-**Strangle** involves buying an OTM call and an OTM put with the same expiration but different strike prices.
+A**Strangle** involves buying an OTM call and an OTM put with the **same expiration** but **different strike prices**.
 
 **When to use:** Similar to a straddle but cheaper, used when expecting large price movement in either
 direction. The stock needs to move further to profit compared to a straddle.
@@ -232,6 +231,12 @@ direction. The stock needs to move further to profit compared to a straddle.
         st.markdown(
             f"**Break-even Points:** £{break_even_lower:.2f} and £{break_even_upper:.2f}"
         )
+
+    st.info(
+        "A straddle uses a call and a put with the same strike; a strangle uses a call and a put with different strikes, both on the same expiry. Straddles cost more but need less movement to profit, while strangles are cheaper but require a bigger move.  "
+        "\n- Straddles are more expensive because both options are at-the-money, so they have higher premiums. "
+        "\n- Strangles are cheaper because both options are out-of-the-money and have lower premiums. "
+    )
 
 elif strategy == "Butterfly":
     with col1:
