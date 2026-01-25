@@ -3,10 +3,10 @@ name = "quant-finance"
 version = "0.1.0"
 description = "Quantitative Finance Examples"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "auto-mix-prep>=0.2.0",
-    "black>=25.1.0",
+    "black>=26.1.0",
     "duckdb>=1.4.1",
     "jupyter>=1.1.1",
     "lab>=8.5",
@@ -15,7 +15,7 @@ dependencies = [
     "networkx>=3.4.2",
     "pandas>=2.2.3",
     "pre-commit>=3.0.0",
-    "ruff>=0.9.6",
+    "ruff>=0.14.13",
     "scipy>=1.15.2",
     "sqlglot>=28.6.0",
     "streamlit>=1.52.2",
