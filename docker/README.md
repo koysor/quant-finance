@@ -15,10 +15,44 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 
 | App | URL |
 |-----|-----|
-| Quant Finance | http://51.20.92.159:8501 |
-| Options | http://51.20.92.159:8502 |
-| Fixed Income | http://51.20.92.159:8503 |
-| Portfolio Management | http://51.20.92.159:8504 |
+| Quant Finance | http://13.50.72.89:8501 |
+| Options | http://13.50.72.89:8502 |
+| Fixed Income | http://13.50.72.89:8503 |
+| Portfolio Management | http://13.50.72.89:8504 |
+| Maths Python | http://13.50.72.89:8505 |
+
+## Port Mapping Explained
+
+All Streamlit apps run on port 8501 **inside** their containers. Docker maps each to a unique **external** port on the EC2 host:
+
+```
+EC2 Host Port    Container Port    App
+─────────────    ──────────────    ─────────────────────
+8501        ──►  8501              quant-finance
+8502        ──►  8501              options
+8503        ──►  8501              fixed-income
+8504        ──►  8501              portfolio-management
+8505        ──►  8501              maths-python (separate repo)
+```
+
+The `-p` flag syntax: `-p <host-port>:<container-port>`
+
+```bash
+docker run -p 8502:8501 options-app
+#             │     │
+#             │     └── Port inside container (always 8501 for Streamlit)
+#             └──────── Port on EC2 (must be unique per app)
+```
+
+### Adding New Apps
+
+To deploy another Streamlit app, choose the next available port (8506, 8507, etc.):
+
+```bash
+docker run -d -p 8506:8501 --name new-app --restart unless-stopped new-app-image
+```
+
+Remember to add the new port to the EC2 security group.
 
 ## Local Development
 
@@ -125,7 +159,7 @@ Automatic deployment on every push to `main`.
 
    | Secret | Value |
    |--------|-------|
-   | `EC2_HOST` | `51.20.92.159` |
+   | `EC2_HOST` | `13.50.72.89` |
    | `EC2_SSH_KEY` | Contents of your `.pem` file |
 
 2. **Push to deploy**
