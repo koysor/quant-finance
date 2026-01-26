@@ -10,10 +10,9 @@ Beyond the interactive applications, the repository includes robust data ingesti
 
 This project features several Streamlit applications, providing interactive access to various quantitative finance tools.
 
-*   **Streamlit Cloud:** A general overview application is available at: [https://maths-python-koysor.streamlit.app/](https://maths-python-koysor.streamlit.app/)
+* **AWS EC2 Deployments:** For more specialized applications, the following are deployed on an AWS EC2 instance. Please replace `YOUR_EC2_HOST` with the actual IP address or hostname of the EC2 instance where these applications are hosted.
 
-*   **AWS EC2 Deployments:** For more specialized applications, the following are deployed on an AWS EC2 instance. Please replace `YOUR_EC2_HOST` with the actual IP address or hostname of the EC2 instance where these applications are hosted.
-    *   **Quant Finance:** `http://YOUR_EC2_HOST:8501`
-    *   **Options:** `http://YOUR_EC2_HOST:8502`
-    *   **Fixed Income:** `http://YOUR_EC2_HOST:8503`
-    *   **Portfolio Management:** `http://YOUR_EC2_HOST:8504`
+  * **Quant Finance:** http://koysor.duckdns.org/
+  * **Options:** http://koysor.duckdns.org/options/
+  * **Fixed Income:** http://koysor.duckdns.org/fixed-income/
+  * **Portfolio Management:** http://koysor.duckdns.org/portfolio/
