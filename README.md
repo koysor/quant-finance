@@ -1,3 +1,7 @@
 # quant-finance
 
-Examples of Python code for Quantitative Finance. Including snippets exposed via a Streamlit web application at https://maths-python-koysor.streamlit.app/ .
+This repository, `quant-finance`, serves as a comprehensive collection of Python code examples and tools for various quantitative finance applications. It encompasses modules dedicated to key areas such as fixed income analysis, options pricing and strategies, and portfolio management. The project aims to provide practical implementations of financial models and concepts, making complex quantitative methods accessible and understandable through code.
+
+A significant feature of this repository is its integration with Streamlit, enabling users to interact with many of the quantitative finance tools via a user-friendly web application. This allows for immediate visualization and experimentation with financial models, from binomial trees for option pricing to Monte Carlo simulations for stock price forecasting. The Streamlit applications are structured around different financial domains, offering dedicated interfaces for each.
+
+Beyond the interactive applications, the repository includes robust data ingestion capabilities, ensuring that the financial models can be fed with relevant and timely data. It also contains extensive unit tests to maintain code quality and accuracy, along with development configurations and Docker files to facilitate a consistent development and deployment environment. This makes `quant-finance` a valuable resource for both learning and applying quantitative finance principles.
