@@ -13,6 +13,18 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 
 ## Live URLs
 
+### Via Domain (Recommended)
+
+| App | URL |
+|-----|-----|
+| Quant Finance | http://koysor.duckdns.org:8501 |
+| Options | http://koysor.duckdns.org:8502 |
+| Fixed Income | http://koysor.duckdns.org:8503 |
+| Portfolio Management | http://koysor.duckdns.org:8504 |
+| Maths Python | http://koysor.duckdns.org:8505 |
+
+### Via IP Address
+
 | App | URL |
 |-----|-----|
 | Quant Finance | http://13.50.72.89:8501 |
@@ -238,9 +250,132 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 ```
 
+## Custom Domain Setup (DuckDNS)
+
+Free domain via [DuckDNS](https://www.duckdns.org).
+
+### Step 1: Register Domain
+
+1. Go to https://www.duckdns.org
+2. Sign in with Google/GitHub
+3. Create a subdomain (e.g., `koysor`)
+4. Enter your EC2 IP: `13.50.72.89`
+5. Click **update ip**
+
+### Step 2: Test It
+
+Wait 1-2 minutes, then access:
+
+| App | URL |
+|-----|-----|
+| Quant Finance | http://koysor.duckdns.org:8501 |
+| Options | http://koysor.duckdns.org:8502 |
+| Fixed Income | http://koysor.duckdns.org:8503 |
+| Portfolio Management | http://koysor.duckdns.org:8504 |
+| Maths Python | http://koysor.duckdns.org:8505 |
+
+### Step 3: Remove Port Numbers with Nginx (Optional)
+
+Access apps without ports (e.g., `http://koysor.duckdns.org/options/`).
+
+Connect to EC2 via Instance Connect and run:
+
+```bash
+sudo dnf install -y nginx
+
+sudo tee /etc/nginx/conf.d/streamlit.conf > /dev/null <<'EOF'
+server {
+    listen 80;
+    server_name koysor.duckdns.org;
+
+    location / {
+        proxy_pass http://localhost:8501;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    location /options/ {
+        proxy_pass http://localhost:8502/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    location /fixed-income/ {
+        proxy_pass http://localhost:8503/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    location /portfolio/ {
+        proxy_pass http://localhost:8504/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    location /maths/ {
+        proxy_pass http://localhost:8505/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+}
+EOF
+
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+Access at:
+- http://koysor.duckdns.org/ (Quant Finance)
+- http://koysor.duckdns.org/options/
+- http://koysor.duckdns.org/fixed-income/
+- http://koysor.duckdns.org/portfolio/
+- http://koysor.duckdns.org/maths/
+
+### Step 4: Add Free HTTPS (Optional)
+
+Get a free SSL certificate from Let's Encrypt:
+
+```bash
+sudo dnf install -y python3-pip
+sudo pip3 install certbot certbot-nginx
+sudo certbot --nginx -d koysor.duckdns.org
+```
+
+Follow the prompts. Certbot will:
+- Obtain SSL certificate
+- Configure Nginx for HTTPS
+- Set up auto-renewal
+
+Access at: https://koysor.duckdns.org/
+
+### Update DuckDNS IP When It Changes
+
+If your EC2 IP changes (e.g., after reboot without Elastic IP):
+
+1. Go to https://www.duckdns.org
+2. Update the IP for your subdomain
+3. Update `EC2_HOST` GitHub secret
+
 ## Cost
 
 | Resource | Monthly Cost |
 |----------|-------------|
 | EC2 t2.micro | **$0** (free tier, first 12 months) |
+| DuckDNS domain | **$0** (free) |
+| Let's Encrypt SSL | **$0** (free) |
 | After free tier | ~$8-10/month |
