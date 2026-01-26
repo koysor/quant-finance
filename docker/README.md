@@ -1,22 +1,31 @@
 # Docker Deployment Guide
 
-This directory contains Docker configurations for deploying the Quantitative Finance Streamlit applications to AWS.
+This directory contains Docker configurations for deploying the Quantitative Finance Streamlit applications.
 
 ## Available Applications
 
-| Application | Dockerfile | Description |
-|-------------|------------|-------------|
-| Quantitative Finance | `Dockerfile.quant-finance` | Stochastic processes, Greeks, volatility modeling, risk management |
-| Options | `Dockerfile.options` | Options pricing models, binomial trees, Black-Scholes |
-| Fixed Income | `Dockerfile.fixed-income` | Bond pricing and fixed income securities |
-| Portfolio Management | `Dockerfile.portfolio-management` | Modern Portfolio Theory, CAPM, alpha analysis |
+| Application | Dockerfile | Port | Description |
+|-------------|------------|------|-------------|
+| Quantitative Finance | `Dockerfile.quant-finance` | 8501 | Stochastic processes, Greeks, volatility modeling, risk management |
+| Options | `Dockerfile.options` | 8502 | Options pricing models, binomial trees, Black-Scholes |
+| Fixed Income | `Dockerfile.fixed-income` | 8503 | Bond pricing and fixed income securities |
+| Portfolio Management | `Dockerfile.portfolio-management` | 8504 | Modern Portfolio Theory, CAPM, alpha analysis |
+
+## Live URLs
+
+| App | URL |
+|-----|-----|
+| Quant Finance | http://51.20.92.159:8501 |
+| Options | http://51.20.92.159:8502 |
+| Fixed Income | http://51.20.92.159:8503 |
+| Portfolio Management | http://51.20.92.159:8504 |
 
 ## Local Development
 
 ### Build and Run All Applications
 
 ```bash
-# From the docker directory
+# From the repository root directory
 cd docker
 docker-compose up --build
 
@@ -46,109 +55,95 @@ docker build -f docker/Dockerfile.portfolio-management -t portfolio-management-a
 ### Run Individual Containers
 
 ```bash
-docker run -p 8501:8501 quant-finance-app
-docker run -p 8501:8501 options-app
-docker run -p 8501:8501 fixed-income-app
-docker run -p 8501:8501 portfolio-management-app
+docker run -d -p 8501:8501 --name quant-finance quant-finance-app
+docker run -d -p 8502:8501 --name options options-app
+docker run -d -p 8503:8501 --name fixed-income fixed-income-app
+docker run -d -p 8504:8501 --name portfolio portfolio-management-app
 ```
 
-## AWS Deployment
+## AWS EC2 Deployment (Free Tier)
 
-### Prerequisites
+The apps are deployed on an AWS EC2 t2.micro instance (free tier eligible).
 
-- AWS CLI configured with appropriate credentials
-- Docker installed locally
-- An AWS ECR repository for each application
+### Manual Deployment
 
-### Push to Amazon ECR
+1. **SSH into EC2 (via EC2 Instance Connect)**
+   - Go to EC2 Console → Instances → Select instance → Connect → EC2 Instance Connect
+
+2. **Install Docker (first time only)**
+   ```bash
+   sudo dnf update -y
+   sudo dnf install -y docker git
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   sudo usermod -aG docker ec2-user
+   ```
+
+3. **Clone and build**
+   ```bash
+   git clone https://github.com/koysor/quant-finance.git
+   cd quant-finance
+
+   sudo docker build -f docker/Dockerfile.quant-finance -t quant-finance-app .
+   sudo docker build -f docker/Dockerfile.options -t options-app .
+   sudo docker build -f docker/Dockerfile.fixed-income -t fixed-income-app .
+   sudo docker build -f docker/Dockerfile.portfolio-management -t portfolio-management-app .
+   ```
+
+4. **Run containers**
+   ```bash
+   sudo docker run -d -p 8501:8501 --name quant-finance --restart unless-stopped quant-finance-app
+   sudo docker run -d -p 8502:8501 --name options --restart unless-stopped options-app
+   sudo docker run -d -p 8503:8501 --name fixed-income --restart unless-stopped fixed-income-app
+   sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
+   ```
+
+### Update Deployed Apps
 
 ```bash
-# Authenticate Docker to ECR
-aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
-
-# Create ECR repositories (if not exists)
-aws ecr create-repository --repository-name quant-finance-app
-aws ecr create-repository --repository-name options-app
-aws ecr create-repository --repository-name fixed-income-app
-aws ecr create-repository --repository-name portfolio-management-app
-
-# Tag and push images
-docker tag quant-finance-app:latest <account-id>.dkr.ecr.<region>.amazonaws.com/quant-finance-app:latest
-docker push <account-id>.dkr.ecr.<region>.amazonaws.com/quant-finance-app:latest
-
-# Repeat for other applications...
+cd ~/quant-finance
+git pull
+sudo docker stop quant-finance options fixed-income portfolio
+sudo docker rm quant-finance options fixed-income portfolio
+sudo docker build -f docker/Dockerfile.quant-finance -t quant-finance-app .
+sudo docker build -f docker/Dockerfile.options -t options-app .
+sudo docker build -f docker/Dockerfile.fixed-income -t fixed-income-app .
+sudo docker build -f docker/Dockerfile.portfolio-management -t portfolio-management-app .
+sudo docker run -d -p 8501:8501 --name quant-finance --restart unless-stopped quant-finance-app
+sudo docker run -d -p 8502:8501 --name options --restart unless-stopped options-app
+sudo docker run -d -p 8503:8501 --name fixed-income --restart unless-stopped fixed-income-app
+sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
 ```
 
-### AWS App Runner
+## CI/CD with GitHub Actions
 
-App Runner is the simplest option for deploying containerized web applications.
+Automatic deployment on every push to `main`.
 
-1. Go to AWS App Runner console
-2. Create a new service
-3. Select "Container registry" → "Amazon ECR"
-4. Choose your ECR image
-5. Configure:
-   - Port: `8501`
-   - CPU: 1 vCPU (minimum)
-   - Memory: 2 GB (recommended for data processing)
-6. Deploy
+### Setup
 
-### AWS ECS (Fargate)
+1. **Add GitHub Secrets** (Settings → Secrets → Actions):
 
-For more control over networking and scaling:
+   | Secret | Value |
+   |--------|-------|
+   | `EC2_HOST` | `51.20.92.159` |
+   | `EC2_SSH_KEY` | Contents of your `.pem` file |
 
-1. Create an ECS cluster
-2. Create a task definition:
-   ```json
-   {
-     "family": "quant-finance-task",
-     "networkMode": "awsvpc",
-     "requiresCompatibilities": ["FARGATE"],
-     "cpu": "512",
-     "memory": "1024",
-     "containerDefinitions": [
-       {
-         "name": "quant-finance",
-         "image": "<account-id>.dkr.ecr.<region>.amazonaws.com/quant-finance-app:latest",
-         "portMappings": [
-           {
-             "containerPort": 8501,
-             "protocol": "tcp"
-           }
-         ],
-         "healthCheck": {
-           "command": ["CMD-SHELL", "curl -f http://localhost:8501/_stcore/health || exit 1"],
-           "interval": 30,
-           "timeout": 10,
-           "retries": 3,
-           "startPeriod": 5
-         }
-       }
-     ]
-   }
+2. **Push to deploy**
+   ```bash
+   git add .
+   git commit -m "Your changes"
+   git push origin main
    ```
-3. Create a service with an Application Load Balancer
-4. Configure target group health checks to use `/_stcore/health`
 
-### AWS Elastic Beanstalk
+3. **Monitor** at https://github.com/koysor/quant-finance/actions
 
-1. Create a `Dockerrun.aws.json` file:
-   ```json
-   {
-     "AWSEBDockerrunVersion": "1",
-     "Image": {
-       "Name": "<account-id>.dkr.ecr.<region>.amazonaws.com/quant-finance-app:latest",
-       "Update": "true"
-     },
-     "Ports": [
-       {
-         "ContainerPort": 8501,
-         "HostPort": 8501
-       }
-     ]
-   }
-   ```
-2. Deploy using EB CLI or console
+### How It Works
+
+The workflow at `.github/workflows/deploy-ec2.yml`:
+1. Runs code quality checks (Black, Ruff)
+2. SSHs into EC2 instance
+3. Pulls latest code
+4. Rebuilds and restarts containers
 
 ## Configuration
 
@@ -162,12 +157,11 @@ For more control over networking and scaling:
 
 ### Health Checks
 
-All Dockerfiles include health checks compatible with AWS load balancers:
+All Dockerfiles include health checks:
 
 - **Endpoint:** `/_stcore/health`
 - **Interval:** 30 seconds
 - **Timeout:** 10 seconds
-- **Start period:** 5 seconds
 - **Retries:** 3
 
 ### Security
@@ -178,27 +172,41 @@ All Dockerfiles include health checks compatible with AWS load balancers:
 
 ## Troubleshooting
 
-### Container won't start
-
+### Check container status
 ```bash
-# Check logs
-docker logs <container-id>
+sudo docker ps -a
+```
 
-# Run interactively for debugging
-docker run -it --entrypoint /bin/bash quant-finance-app
+### View logs
+```bash
+sudo docker logs quant-finance
+sudo docker logs -f options  # follow logs
+```
+
+### Restart a container
+```bash
+sudo docker restart quant-finance
 ```
 
 ### Health check failing
-
 ```bash
-# Test health endpoint manually
 curl http://localhost:8501/_stcore/health
 ```
 
 ### Out of memory
 
-Increase container memory allocation. Recommended minimum: 2 GB for data-intensive operations.
+The t2.micro has 1GB RAM. If builds fail:
+```bash
+# Add swap space
+sudo dd if=/dev/zero of=/swapfile bs=128M count=16
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
 
-### Slow cold starts
+## Cost
 
-Consider using AWS App Runner with provisioned concurrency or ECS with minimum task count > 0.
+| Resource | Monthly Cost |
+|----------|-------------|
+| EC2 t2.micro | **$0** (free tier, first 12 months) |
+| After free tier | ~$8-10/month |

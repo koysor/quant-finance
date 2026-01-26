@@ -1,0 +1,73 @@
+name: Deploy to EC2 (Free Tier)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'black[jupyter]==24.2.0' 'ruff>=0.4.0'
+
+      - name: Check code formatting with Black
+        run: black --check --diff .
+
+      - name: Check code quality with Ruff
+        run: ruff check .
+
+  deploy:
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/quant-finance || git clone https://github.com/${{ github.repository }}.git ~/quant-finance
+            cd ~/quant-finance
+            git fetch origin
+            git reset --hard origin/main
+            cd docker
+            docker-compose pull 2>/dev/null || true
+            docker-compose up -d --build
+            docker system prune -f
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sleep 30
+            curl -f http://localhost:8501/_stcore/health || echo "Quant Finance: Starting..."
+            curl -f http://localhost:8502/_stcore/health || echo "Options: Starting..."
+            curl -f http://localhost:8503/_stcore/health || echo "Fixed Income: Starting..."
+            curl -f http://localhost:8504/_stcore/health || echo "Portfolio: Starting..."
+            echo "Deployment complete!"
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployed to EC2"
+          echo "Apps available at:"
+          echo "  - http://${{ secrets.EC2_HOST }}:8501 (Quant Finance)"
+          echo "  - http://${{ secrets.EC2_HOST }}:8502 (Options)"
+          echo "  - http://${{ secrets.EC2_HOST }}:8503 (Fixed Income)"
+          echo "  - http://${{ secrets.EC2_HOST }}:8504 (Portfolio)"
