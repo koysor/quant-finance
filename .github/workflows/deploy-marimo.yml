@@ -34,7 +34,7 @@ jobs:
           mkdir -p _site
           for notebook in src/notebooks/*.py; do
             name=$(basename "$notebook" .py)
-            uv run marimo export html-wasm "$notebook" -o "_site/${name}.html" --mode run --include-code
+            uv run marimo export html-wasm "$notebook" -o "_site/${name}.html" --mode edit
           done
 
       - name: Create index page
