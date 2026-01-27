@@ -16,3 +16,14 @@ This project features several Streamlit applications, providing interactive acce
   * **Options:** http://koysor.duckdns.org/options/
   * **Fixed Income:** http://koysor.duckdns.org/fixed-income/
   * **Portfolio Management:** http://koysor.duckdns.org/portfolio/
+
+## Interactive Marimo Notebooks
+
+Interactive Python notebooks are available via GitHub Pages at **https://koysor.github.io/quant-finance/**
+
+These notebooks run entirely in your browser using WebAssembly (no server required) and allow you to view, edit, and execute the code directly:
+
+* [Distributions: Normal vs Lognormal](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html)
+* [Simulate Geometric Brownian Motion Paths](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html)
+* [S&P 500 Data Ingestion](https://koysor.github.io/quant-finance/sp500_data_ingestion.html)
+* [YFinance Index Prices](https://koysor.github.io/quant-finance/yfinance_index_prices.html)
