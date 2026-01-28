@@ -10,7 +10,7 @@ Beyond the interactive applications, the repository includes robust data ingesti
 
 This project features several Streamlit applications, providing interactive access to various quantitative finance tools.
 
-* **AWS EC2 Deployments:** For more specialized applications, the following are deployed on an AWS EC2 instance. Please replace `YOUR_EC2_HOST` with the actual IP address or hostname of the EC2 instance where these applications are hosted.
+* **AWS EC2 Deployments:** For more specialised applications, the following are deployed on an AWS EC2 instance.
 
   * **Quant Finance:** http://koysor.duckdns.org/
   * **Options:** http://koysor.duckdns.org/options/
@@ -25,5 +25,5 @@ These notebooks run entirely in your browser using WebAssembly (no server requir
 
 * [Distributions: Normal vs Lognormal](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html)
 * [Simulate Geometric Brownian Motion Paths](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html)
-* [S&P 500 Data Ingestion](https://koysor.github.io/quant-finance/sp500_data_ingestion.html)
+* [S&amp;P 500 Data Ingestion](https://koysor.github.io/quant-finance/sp500_data_ingestion.html)
 * [YFinance Index Prices](https://koysor.github.io/quant-finance/yfinance_index_prices.html)

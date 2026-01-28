@@ -10,29 +10,29 @@ AWS is used exclusively as an **infrastructure hosting platform** for deploying 
 
 ### EC2 (Elastic Compute Cloud)
 
-The primary AWS service used is EC2 for hosting Docker containers running the Streamlit applications.
+The primary AWS service used is EC2 for hosting Docker containers running the Streamlit applications.  The Docker containers are platform-agnostic and could be deployed on any Linux server with Docker support.
 
-| Configuration | Value |
-|---------------|-------|
-| Instance Type | t2.micro (free tier eligible) |
-| Operating System | Amazon Linux 2 |
-| Public IP | 13.50.72.89 |
-| Domain | koysor.duckdns.org (via DuckDNS) |
+| Configuration    | Value                            |
+| ---------------- | -------------------------------- |
+| Instance Type    | t2.micro (free tier eligible)    |
+| Operating System | Amazon Linux 2                   |
+| Public IP        | 13.50.72.89                      |
+| Domain           | koysor.duckdns.org (via DuckDNS) |
 
 ### Security Groups
 
 The EC2 instance requires the following inbound rules:
 
-| Port | Protocol | Purpose |
-|------|----------|---------|
-| 22 | TCP | SSH access for deployment |
-| 8501-8505 | TCP | Streamlit application access |
-| 80 | TCP | HTTP (optional, for reverse proxy) |
-| 443 | TCP | HTTPS (optional, for SSL) |
+| Port      | Protocol | Purpose                            |
+| --------- | -------- | ---------------------------------- |
+| 22        | TCP      | SSH access for deployment          |
+| 8501-8505 | TCP      | Streamlit application access       |
+| 80        | TCP      | HTTP (optional, for reverse proxy) |
+| 443       | TCP      | HTTPS (optional, for SSL)          |
 
 ### Elastic IP (Recommended)
 
-An Elastic IP is recommended to maintain a static public IP address, preventing IP changes when the instance is stopped/started.
+An Elastic IP is used to maintain a static public IP address, preventing IP changes when the instance is stopped/started.
 
 ## Deployment Architecture
 
@@ -61,12 +61,12 @@ An Elastic IP is recommended to maintain a static public IP address, preventing 
 
 ## Deployed Applications
 
-| Application | Port | URL |
-|-------------|------|-----|
-| Quantitative Finance | 8501 | http://koysor.duckdns.org/ |
-| Options | 8502 | http://koysor.duckdns.org/options/ |
-| Fixed Income | 8503 | http://koysor.duckdns.org/fixed-income/ |
-| Portfolio Management | 8504 | http://koysor.duckdns.org/portfolio/ |
+| Application          | Port | URL                                     |
+| -------------------- | ---- | --------------------------------------- |
+| Quantitative Finance | 8501 | http://koysor.duckdns.org/              |
+| Options              | 8502 | http://koysor.duckdns.org/options/      |
+| Fixed Income         | 8503 | http://koysor.duckdns.org/fixed-income/ |
+| Portfolio Management | 8504 | http://koysor.duckdns.org/portfolio/    |
 
 ## Deployment Method
 
@@ -78,34 +78,21 @@ Deployment is automated via GitHub Actions (`.github/workflows/deploy-ec2.yml`):
 4. **Container Orchestration** - Docker Compose starts all four Streamlit applications
 5. **Health Checks** - Verifies all applications are responding on their respective ports
 
-### GitHub Secrets Required
+### GitHub Secrets
 
-| Secret | Description |
-|--------|-------------|
-| `EC2_HOST` | EC2 instance public IP address |
+| Secret          | Description                    |
+| --------------- | ------------------------------ |
+| `EC2_HOST`    | EC2 instance public IP address |
 | `EC2_SSH_KEY` | Private SSH key for EC2 access |
 
 ## Cost Estimation
 
-| Resource | Monthly Cost |
-|----------|--------------|
-| EC2 t2.micro | £0 (free tier, first 12 months) |
-| DuckDNS domain | £0 (free service) |
-| Let's Encrypt SSL | £0 (free, if configured) |
-| **After free tier** | ~£7-9/month |
-
-## What AWS is NOT Used For
-
-The application code does not use any AWS services programmatically:
-
-- No AWS SDK (boto3) usage
-- No S3 for storage
-- No Lambda functions
-- No DynamoDB or RDS databases
-- No SQS/SNS messaging
-- No CloudFormation or Terraform infrastructure-as-code
-
-The Docker containers are platform-agnostic and could be deployed on any Linux server with Docker support.
+| Resource                  | Monthly Cost                     |
+| ------------------------- | -------------------------------- |
+| EC2 t2.micro              | £0 (free tier, first 12 months) |
+| DuckDNS domain            | £0 (free service)               |
+| Let's Encrypt SSL         | £0 (free, if configured)        |
+| **After free tier** | ~£7-9/month                     |
 
 ## Related Documentation
 
