@@ -40,12 +40,18 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
+
+            # Clone or update repository
             cd ~/quant-finance || git clone https://github.com/${{ github.repository }}.git ~/quant-finance
             cd ~/quant-finance
             git fetch origin
             git reset --hard origin/main
-            
-            # Build images individually (avoids buildx requirement)
+
+            # Clean up unused Docker resources before building
+            docker system prune -f
+
+            # Build images individually
             docker build --no-cache -f docker/Dockerfile.quant-finance -t quant-finance .
             docker build --no-cache -f docker/Dockerfile.options -t options .
             docker build --no-cache -f docker/Dockerfile.fixed-income -t fixed-income .
@@ -56,8 +62,6 @@ jobs:
             docker-compose down --remove-orphans || true
             docker-compose up -d
 
-            docker system prune -f
-
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -65,16 +69,30 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sleep 60
-            curl -f http://localhost:8501/_stcore/health || echo "Quant Finance: Starting..."
-            curl -f http://localhost:8502/_stcore/health || echo "Options: Starting..."
-            curl -f http://localhost:8503/_stcore/health || echo "Fixed Income: Starting..."
-            curl -f http://localhost:8504/_stcore/health || echo "Portfolio: Starting..."
-            echo "Deployment complete!"
+            set -e
+            echo "Waiting for apps to start..."
+            sleep 30
+
+            # Verify all containers are running
+            SERVICES="quant-finance options fixed-income portfolio-management"
+            for service in $SERVICES; do
+              if ! docker ps | grep -q "$service"; then
+                echo "Container $service is not running!"
+                docker logs docker-${service}-1 2>/dev/null || docker logs ${service} 2>/dev/null || true
+                exit 1
+              fi
+            done
+
+            # Check health endpoints
+            curl -f http://localhost:8501/_stcore/health && echo " Quant Finance OK"
+            curl -f http://localhost:8502/_stcore/health && echo " Options OK"
+            curl -f http://localhost:8503/_stcore/health && echo " Fixed Income OK"
+            curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
+            echo "All health checks passed!"
 
       - name: Deployment summary
         run: |
-          echo "✅ Deployed to EC2"
+          echo "Deployed to EC2"
           echo "Apps available at:"
           echo "  - http://${{ secrets.EC2_HOST }}:8501 (Quant Finance)"
           echo "  - http://${{ secrets.EC2_HOST }}:8502 (Options)"
