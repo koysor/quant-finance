@@ -2,7 +2,7 @@
 Configuration management for the data ingestion package.
 
 Provides centralized configuration for caching, rate limiting,
-retry behavior, and data validation.
+retry behaviour, and data validation.
 """
 
 import os

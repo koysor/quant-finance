@@ -10,7 +10,7 @@ option_position_type = st.selectbox(
     "Select Option Position Type",
     ["Long Call", "Short Call", "Long Put", "Short Put"],
     index=0,
-    help="Select the type of option position to visualize the payoff.",
+    help="Select the type of option position to visualise the payoff.",
 )
 
 
