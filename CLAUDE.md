@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a quantitative finance educational repository that demonstrates Python implementations of financial models through interactive Streamlit web applications. The project contains four main applications:
 
-1. **Quantitative Finance App** (`app_quant_finance/`) - Educational content covering stochastic processes, Greeks, volatility modeling, risk management, and mathematical finance concepts
+1. **Quantitative Finance App** (`app_quant_finance/`) - Educational content covering stochastic processes, Greeks, volatility modelling, risk management, and mathematical finance concepts
 2. **Options App** (`app_options/`) - Focused on options pricing models including binomial trees, Black-Scholes, and option payoffs
 3. **Fixed Income App** (`app_fixed_income/`) - Bond pricing and fixed income securities
 4. **Portfolio Management App** (`app_portfolio_management/`) - Modern Portfolio Theory, CAPM, and alpha analysis
@@ -82,7 +82,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 ## Key Dependencies
 
 - **streamlit** - Web application framework
-- **matplotlib** - Plotting and visualizations
+- **matplotlib** - Plotting and visualisations
 - **pandas** - Data manipulation
 - **scipy** - Scientific computing
 - **networkx** - Graph theory (used for binomial trees)
@@ -100,7 +100,24 @@ pre-commit run --all-files  # Run hooks manually on all files
   - Set page config with wide layout
   - Add markdown headers and explanatory text
   - Include mathematical formulations using LaTeX
-  - Provide interactive examples and visualizations
+  - Provide interactive examples and visualisations
 
 - Pages are educational-focused, combining theory with practical Python implementations
 - Mathematical concepts are explained with both LaTeX formulations and code examples
+
+## Language and Spelling
+
+**Always use British English spelling** in all code, comments, docstrings, and documentation. Common examples:
+
+| American (avoid) | British (use) |
+|------------------|---------------|
+| behavior | behaviour |
+| color | colour |
+| optimize | optimise |
+| realize | realise |
+| analyze | analyse |
+| center | centre |
+| modeling | modelling |
+| visualize | visualise |
+| initialize | initialise |
+| normalize | normalise |
