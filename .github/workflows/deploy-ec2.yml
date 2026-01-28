@@ -44,10 +44,18 @@ jobs:
             cd ~/quant-finance
             git fetch origin
             git reset --hard origin/main
+            
+            # Build images individually (avoids buildx requirement)
+            docker build --no-cache -f docker/Dockerfile.quant-finance -t quant-finance .
+            docker build --no-cache -f docker/Dockerfile.options -t options .
+            docker build --no-cache -f docker/Dockerfile.fixed-income -t fixed-income .
+            docker build --no-cache -f docker/Dockerfile.portfolio-management -t portfolio-management .
+
+            # Restart all services
             cd docker
             docker-compose down --remove-orphans || true
-            docker-compose build --no-cache
             docker-compose up -d
+
             docker system prune -f
 
       - name: Health check
@@ -57,7 +65,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sleep 30
+            sleep 60
             curl -f http://localhost:8501/_stcore/health || echo "Quant Finance: Starting..."
             curl -f http://localhost:8502/_stcore/health || echo "Options: Starting..."
             curl -f http://localhost:8503/_stcore/health || echo "Fixed Income: Starting..."

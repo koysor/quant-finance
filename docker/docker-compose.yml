@@ -3,6 +3,7 @@
 
 services:
   quant-finance:
+    image: quant-finance
     build:
       context: ..
       dockerfile: docker/Dockerfile.quant-finance
@@ -13,6 +14,7 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
 
   options:
+    image: options
     build:
       context: ..
       dockerfile: docker/Dockerfile.options
@@ -23,6 +25,7 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
 
   fixed-income:
+    image: fixed-income
     build:
       context: ..
       dockerfile: docker/Dockerfile.fixed-income
@@ -33,6 +36,7 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
 
   portfolio-management:
+    image: portfolio-management
     build:
       context: ..
       dockerfile: docker/Dockerfile.portfolio-management
