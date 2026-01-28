@@ -45,8 +45,9 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             cd docker
-            docker-compose pull 2>/dev/null || true
-            docker-compose up -d --build
+            docker-compose down --remove-orphans || true
+            docker-compose build --no-cache
+            docker-compose up -d
             docker system prune -f
 
       - name: Health check
