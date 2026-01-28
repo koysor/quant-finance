@@ -15,9 +15,15 @@ dependencies = [
     "networkx>=3.4.2",
     "pandas>=2.2.3",
     "pre-commit>=3.0.0",
+    "pytest>=9.0.2",
     "ruff>=0.14.13",
     "scipy>=1.15.2",
     "sqlglot>=28.6.0",
     "streamlit>=1.52.2",
     "yfinance>=0.2.66",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
 ]
