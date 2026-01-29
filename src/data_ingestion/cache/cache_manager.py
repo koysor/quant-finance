@@ -12,7 +12,6 @@ from datetime import datetime
 from ..config import DataIngestionConfig, get_default_config
 from .duckdb_cache import DuckDBCache
 
-
 logger = logging.getLogger(__name__)
 
 

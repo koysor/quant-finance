@@ -7,7 +7,6 @@ import logging
 from typing import Callable, Any, Type, Tuple
 from functools import wraps
 
-
 logger = logging.getLogger(__name__)
 
 

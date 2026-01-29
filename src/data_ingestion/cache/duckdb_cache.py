@@ -16,7 +16,6 @@ from ..base.cache import BaseCache
 from ..config import DataIngestionConfig, get_default_config
 from ..exceptions import CacheError
 
-
 logger = logging.getLogger(__name__)
 
 

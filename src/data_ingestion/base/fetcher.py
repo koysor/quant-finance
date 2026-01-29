@@ -13,7 +13,6 @@ from ..config import DataIngestionConfig, get_default_config
 from ..exceptions import FetchError, ValidationError, CacheError
 from .cache import BaseCache
 
-
 logger = logging.getLogger(__name__)
 
 

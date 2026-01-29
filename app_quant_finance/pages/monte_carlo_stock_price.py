@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 st.set_page_config(layout="wide")
 st.markdown("### Monte Carlo Simulation - Stock Price Random Walk")
 

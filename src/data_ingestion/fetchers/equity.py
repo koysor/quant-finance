@@ -15,7 +15,6 @@ from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
 from ..exceptions import FetchError, ValidationError
 
-
 logger = logging.getLogger(__name__)
 
 

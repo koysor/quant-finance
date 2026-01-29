@@ -3,7 +3,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from typing import Tuple, Union
 
-
 st.set_page_config(layout="wide")
 st.markdown("### The Binomial Model for Option Pricing")
 
