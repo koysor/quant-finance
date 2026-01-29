@@ -81,14 +81,61 @@ pre-commit run --all-files  # Run hooks manually on all files
 
 ## Key Dependencies
 
-- **streamlit** - Web application framework
-- **matplotlib** - Plotting and visualisations
-- **pandas** - Data manipulation
-- **scipy** - Scientific computing
-- **networkx** - Graph theory (used for binomial trees)
-- **yfinance** - Yahoo Finance market data
+### Data and Numerical Processing
+
+- **numpy** - Fundamental numerical computing library (transitive dependency via scipy/pandas)
+  - Array operations for price simulations and time series
+  - Random number generation for Monte Carlo methods
+  - Linear algebra for portfolio optimisation
+  - Statistical functions for financial metrics
+
+- **pandas** - Data manipulation and analysis
+  - DataFrame structures for financial time series data
+  - Date/time handling for market data
+  - Rolling window calculations for moving averages and volatility
+  - Data cleaning and transformation for market data feeds
+
+- **scipy** - Scientific computing and advanced numerical methods
+  - `scipy.stats` - Statistical distributions (normal, log-normal) for option pricing and VaR
+  - `scipy.optimize` - Optimisation algorithms for portfolio weights and implied volatility
+  - `scipy.interpolate` - Yield curve interpolation for fixed income
+  - `scipy.integrate` - Numerical integration for pricing models
+
 - **duckdb** - Embedded analytical database
+  - In-process OLAP database for efficient data queries
+  - SQL interface for financial data analysis
+  - Columnar storage optimised for analytical workloads
+
+- **sqlglot** - SQL parsing and transformation
+  - SQL dialect translation and query manipulation
+
+### Market Data
+
+- **yfinance** - Yahoo Finance market data API
+  - Historical price data retrieval
+  - Real-time quotes for stocks, ETFs, and indices
+  - Fundamental data for equities
+
+### Visualisation
+
+- **matplotlib** - Plotting and visualisations
+  - Financial charts (price series, payoff diagrams)
+  - Distribution plots for risk analysis
+  - Surface plots for volatility surfaces
+
+- **networkx** - Graph theory library
+  - Binomial tree visualisation for options pricing
+  - Tree structure representation for discrete models
+
+- **streamlit** - Web application framework
+  - Interactive dashboards for financial models
+  - Real-time parameter adjustment via widgets
+  - Built-in charting capabilities
+
+### Development and Notebooks
+
 - **jupyter** / **marimo** - Interactive notebook environments
+- **pytest** - Testing framework
 - **black** - Code formatting
 - **ruff** - Linting
 - **pre-commit** - Git hooks for code quality (auto-runs black and ruff on commit)

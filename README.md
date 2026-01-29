@@ -6,6 +6,35 @@ A significant feature of this repository is its integration with Streamlit, enab
 
 Beyond the interactive applications, the repository includes robust data ingestion capabilities, ensuring that the financial models can be fed with relevant and timely data. It also contains extensive unit tests to maintain code quality and accuracy, along with development configurations and Docker files to facilitate a consistent development and deployment environment. This makes `quant-finance` a valuable resource for both learning and applying quantitative finance principles.
 
+## Key Technologies
+
+### Data and Numerical Processing
+
+| Library | Purpose |
+|---------|---------|
+| **NumPy** | Array operations, random number generation for Monte Carlo methods, linear algebra for portfolio optimisation |
+| **pandas** | DataFrame structures for financial time series, rolling window calculations, data cleaning |
+| **SciPy** | Statistical distributions for option pricing, optimisation for portfolio weights, yield curve interpolation |
+| **DuckDB** | Embedded OLAP database for efficient analytical queries on financial data |
+
+### Market Data and Visualisation
+
+| Library | Purpose |
+|---------|---------|
+| **yfinance** | Historical price data, real-time quotes, and fundamental data from Yahoo Finance |
+| **Matplotlib** | Financial charts, payoff diagrams, distribution plots, volatility surfaces |
+| **NetworkX** | Graph visualisation for binomial tree option pricing models |
+| **Streamlit** | Interactive web dashboards with real-time parameter adjustment |
+
+### Development Tools
+
+| Tool | Purpose |
+|------|---------|
+| **Jupyter / Marimo** | Interactive notebook environments for exploratory analysis |
+| **pytest** | Testing framework for code quality |
+| **Black / Ruff** | Code formatting and linting |
+| **pre-commit** | Git hooks for automated code quality checks |
+
 ## Live Streamlit Applications
 
 This project features several Streamlit applications, providing interactive access to various quantitative finance tools.
@@ -27,3 +56,50 @@ These notebooks run entirely in your browser using WebAssembly (no server requir
 * [Simulate Geometric Brownian Motion Paths](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html)
 * [S&amp;P 500 Data Ingestion](https://koysor.github.io/quant-finance/sp500_data_ingestion.html)
 * [YFinance Index Prices](https://koysor.github.io/quant-finance/yfinance_index_prices.html)
+
+## Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to enforce code quality standards automatically before each commit.
+
+### Configured Hooks
+
+| Hook | Version | Purpose |
+|------|---------|---------|
+| **Black** | 25.1.0 | Code formatting - ensures consistent Python style |
+| **Ruff** | 0.9.6 | Linting with auto-fix - catches errors and style issues |
+| **Ruff Format** | 0.9.6 | Additional formatting checks |
+
+### Installation
+
+To install the pre-commit hooks locally:
+
+```bash
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Install the hooks (one-time setup)
+pre-commit install
+```
+
+### Usage
+
+Once installed, hooks run automatically on `git commit`. You can also run them manually:
+
+```bash
+# Run on staged files only
+pre-commit run
+
+# Run on all files in the repository
+pre-commit run --all-files
+
+# Run a specific hook
+pre-commit run black --all-files
+```
+
+### Skipping Hooks
+
+In rare cases where you need to bypass the hooks (not recommended):
+
+```bash
+git commit --no-verify -m "commit message"
+```
