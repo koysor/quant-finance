@@ -46,15 +46,13 @@ def _(bins_slider, mean_slider, std_dev_slider):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ### Normal Distribution
 
     The Normal Distribution is symmetric and bell-shaped.  It is described by two parameters: the mean (μ) and the standard deviation (σ).
 
     The np.random.normal function returns random numbers following a bell-shaped curve centered at loc with variability controlled by scale.
-    """
-    )
+    """)
     return
 
 
@@ -66,15 +64,13 @@ def _(mean, np, standard_deviation):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ### Lognormal Distribution
 
     The function np.random.lognormal(mean=0.0, sigma=1.0, size=None) draws samples from a log-normal distribution.
     The parameter mean (μ) represents the mean of the underlying normal distribution's logarithm. It is not the mean of the log-normal distribution itself, but rather the mean of the normally distributed logarithm of the random variable.
     Sigma is the standard deviation (σ) of the underlying normal distribution's logarithm. It controls the spread of the log-normal distribution.
-    """
-    )
+    """)
     return
 
 
@@ -88,11 +84,9 @@ def _(mean, np, standard_deviation):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ### Plot Normal vs Lognormal
-    """
-    )
+    """)
     return
 
 

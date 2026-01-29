@@ -16,11 +16,9 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     ### Geometric Brownian Motion
-    """
-    )
+    """)
     return
 
 
@@ -154,11 +152,9 @@ def _(S0, T, dt, mo, mu, n_paths, sigma, simulate_gbm):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     #### Plot
-    """
-    )
+    """)
     return
 
 
@@ -267,11 +263,9 @@ def _(S0, T, fig, mu, n_paths, plt, sigma):
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
+    mo.md(r"""
     #### Statistics
-    """
-    )
+    """)
     return
 
 

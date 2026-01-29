@@ -128,12 +128,10 @@ with col_text:
         )
         st.markdown("**Max Profit:** Premium received (limited)")
 
-    st.markdown(
-        f"""
+    st.markdown(f"""
 Where:
 - $S_T$ = Stock price at expiration
 - $K$ = Strike price (£{strike_price:.2f})
 - Premium = £{premium:.2f}
 - Break-even = £{break_even:.2f}
-"""
-    )
+""")

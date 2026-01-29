@@ -6,13 +6,13 @@ repos:
         args: ['--baseline', '.secrets.baseline']
 
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 26.1.0
     hooks:
       - id: black
         language_version: python3
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.6
+    rev: v0.14.14
     hooks:
       - id: ruff
         args: [--fix]

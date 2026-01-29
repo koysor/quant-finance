@@ -87,13 +87,11 @@ p = st.slider(
     "Probability of Success (p)", min_value=0.0, max_value=1.0, value=0.3, step=0.05
 )
 
-st.info(
-    """
+st.info("""
 Each node is labeled (i, j) where:
 - i = time step
 - j = number of upward moves
 - Nodes are arranged to show time progressing on the x-axis and states on the y-axis.
 - Two edges per node: one for an up move and one for a down move.
-        """
-)
+        """)
 display_binomial_tree(n, p)

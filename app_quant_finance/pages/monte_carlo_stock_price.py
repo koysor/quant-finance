@@ -196,8 +196,7 @@ if st.button("Run Monte Carlo Simulation"):
 
 st.markdown("#### Key Insights")
 
-st.write(
-    """
+st.write("""
 **Monte Carlo Simulation Properties:**
 - Each simulation generates random price paths based on the specified parameters
 - The mean of all simulations converges to the theoretical expected value
@@ -209,5 +208,4 @@ st.write(
 - **Scenario Analysis:** Understand range of possible outcomes
 - **Portfolio Optimization:** Compare risk-return profiles of different assets
 - **Option Pricing:** Foundation for more complex derivatives pricing models
-"""
-)
+""")

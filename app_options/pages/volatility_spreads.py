@@ -104,8 +104,7 @@ if strategy == "Straddle":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 A **Straddle** involves buying both a call and a put option at the same strike price and expiration date.
 
 **When to use:** Traders use straddles when they expect significant price movement but are uncertain
@@ -117,8 +116,7 @@ about the direction. Common before earnings announcements or major economic even
 - Profit is substantial (but capped at strike - premium) if the stock falls to zero
 
 **Risk:** Maximum loss equals the total premium paid, occurring when the stock closes exactly at the strike price.
-        """
-        )
+        """)
 
         st.latex(
             r"\text{Payoff} = \max(S_T - K, 0) + \max(K - S_T, 0) - \text{Premium}"
@@ -208,8 +206,7 @@ elif strategy == "Strangle":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 A**Strangle** involves buying an OTM call and an OTM put with the **same expiration** but **different strike prices**.
 
 **When to use:** Similar to a straddle but cheaper, used when expecting large price movement in either
@@ -221,8 +218,7 @@ direction. The stock needs to move further to profit compared to a straddle.
 - Unlimited profit potential on the upside, substantial on the downside
 
 **Risk:** Maximum loss is the total premium paid, occurring if the stock stays between the two strikes.
-        """
-        )
+        """)
 
         st.latex(
             r"\text{Payoff} = \max(S_T - K_{call}, 0) + \max(K_{put} - S_T, 0) - \text{Premium}"
@@ -325,8 +321,7 @@ elif strategy == "Butterfly":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Butterfly Spread** combines a bull spread and a bear spread with three strike prices.
 Buy 1 call at K1, sell 2 calls at K2, buy 1 call at K3 (where K1 < K2 < K3).
 
@@ -339,8 +334,7 @@ Ideal when implied volatility is high and expected to decrease.
 - Limited risk strategy with defined maximum loss
 
 **Risk:** Maximum loss is the net premium paid (net debit), occurring if stock moves significantly in either direction.
-        """
-        )
+        """)
 
         st.markdown(f"**Net Debit:** £{net_debit:.2f}")
         st.markdown(f"**Max Profit:** £{max_profit:.2f} (at middle strike)")
@@ -414,8 +408,7 @@ elif strategy == "Condor":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Condor Spread** uses four strike prices: Buy K1 call, sell K2 call, sell K3 call, buy K4 call.
 Similar to a butterfly but with a wider profit zone.
 
@@ -428,8 +421,7 @@ Offers a wider profit zone than a butterfly but lower maximum profit.
 - Benefits from time decay when stock is in the profit zone
 
 **Risk:** Maximum loss is limited to the net debit paid.
-        """
-        )
+        """)
 
         st.markdown(f"**Net Debit:** £{net_debit:.2f}")
         st.markdown(f"**Max Profit:** £{max_profit:.2f} (between K2 and K3)")
@@ -511,8 +503,7 @@ elif strategy == "Ratio Spread":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            f"""
+        st.markdown(f"""
 **Ratio Spread** involves buying calls at one strike and selling more calls at a higher strike.
 In this {buy_qty}:{sell_qty} ratio, you buy {buy_qty} call(s) at the lower strike and sell {sell_qty} call(s) at the upper strike.
 
@@ -526,8 +517,7 @@ Best when you expect the stock to rise to the short strike but not exceed it sig
 
 **Risk:** Unlimited risk above the upper strike due to the extra short calls.
 This strategy requires careful risk management.
-        """
-        )
+        """)
 
         st.markdown(
             f"**Net Credit/Debit:** £{net_credit:.2f} ({'Credit' if net_credit > 0 else 'Debit'})"
@@ -585,8 +575,7 @@ elif strategy == "Christmas Tree":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Christmas Tree** (also called a Ladder) involves buying one call at a lower strike and
 selling calls at two different higher strikes. The payoff diagram resembles a Christmas tree shape.
 
@@ -600,8 +589,7 @@ Useful when you want to profit from a move up to a certain level but want protec
 
 **Risk:** Unlimited risk if the stock rises significantly above K3.
 Loss also possible if stock stays below K1.
-        """
-        )
+        """)
 
         max_profit = k2 - k1 - net_debit
         st.markdown(
@@ -676,8 +664,7 @@ elif strategy == "Calendar Spread":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Calendar Spread** (Time Spread) involves selling a near-term option and buying a longer-term
 option at the same strike price. Also known as a horizontal spread.
 
@@ -690,8 +677,7 @@ Profits from the faster time decay of the near-term option.
 - Can also profit from increasing implied volatility
 
 **Risk:** Loss if stock moves significantly away from strike or if implied volatility decreases.
-        """
-        )
+        """)
 
         st.markdown(f"**Net Debit:** £{net_debit:.2f}")
         st.markdown(
@@ -766,8 +752,7 @@ elif strategy == "Time Butterfly":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Time Butterfly** combines calendar spreads using three expiration dates at the same strike.
 Buy near-term, sell 2x mid-term, buy far-term options.
 
@@ -780,8 +765,7 @@ A more complex time decay play than a simple calendar spread.
 - Can profit from specific volatility term structure scenarios
 
 **Risk:** Limited to net premium paid. More complex to manage than single calendar spreads.
-        """
-        )
+        """)
 
         st.markdown(f"**Net Debit:** £{net_debit:.2f}")
         st.markdown("**Best case:** Stock at strike at mid-term expiration")
@@ -862,8 +846,7 @@ elif strategy == "Diagonal Spreads":
 
     with text_col:
         st.markdown("#### Strategy Explanation")
-        st.markdown(
-            """
+        st.markdown("""
 **Diagonal Spread** combines elements of vertical and calendar spreads by using different
 strikes AND different expirations. Sell near-term option at one strike, buy far-term at another.
 
@@ -878,8 +861,7 @@ strikes AND different expirations. Sell near-term option at one strike, buy far-
 
 **Risk:** More complex risk profile than simple spreads.
 Loss if stock moves significantly against the position or IV collapses.
-        """
-        )
+        """)
 
         st.markdown(f"**Net Debit:** £{net_debit:.2f}")
         st.markdown(

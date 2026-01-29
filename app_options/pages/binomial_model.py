@@ -183,21 +183,17 @@ latex_code = rf"""
 """
 st.latex(latex_code)
 
-st.info(
-    """
+st.info("""
 - We do not care about whether the stock price goes up or down, as long as we have the right amount of shares to short.
 - The value of the portfolio after an upward movement is equal to the value of the portfolio after a downward movement.
 - The value of the portfolio is the same in both cases, which means that we have created a delta neutral portfolio.
 - The probability of the stock price going up or down does not matter, as we are creating a delta neutral portfolio.
-"""
-)
+""")
 
-st.warning(
-    """
+st.warning("""
 Note that interest rates are assumed to be zero in this example.
 This is a simplification for the sake of clarity. In practice, interest rates would affect the present value of the option \
-and the underlying asset."""
-)
+and the underlying asset.""")
 
 
 with st.expander("Binomial Model Assumptions"):

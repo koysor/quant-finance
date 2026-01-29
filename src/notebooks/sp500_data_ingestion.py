@@ -20,14 +20,12 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
+    mo.md("""
     # S&P 500 Data Fetcher
 
     This notebook uses the `data_ingestion` module to fetch S&P 500 historical data
     with automatic caching, rate limiting, and error handling.
-    """
-    )
+    """)
     return
 
 
@@ -42,13 +40,11 @@ def _(mo):
         value="2025-12-31", label="End Date", start="2000-01-01", stop="2025-12-31"
     )
 
-    mo.md(
-        f"""
+    mo.md(f"""
         ## Select Date Range
 
         {start_date} {end_date}
-        """
-    )
+        """)
     return end_date, start_date
 
 
@@ -61,15 +57,13 @@ def _(mo):
         options=["1d", "1wk", "1mo"], value="1d", label="Data Interval"
     )
 
-    mo.md(
-        f"""
+    mo.md(f"""
         ## Options
 
         {use_cache}
 
         {interval}
-        """
-    )
+        """)
     return interval, use_cache
 
 
@@ -78,8 +72,7 @@ def _(end_date, interval, mo, start_date, use_cache):
     # Fetch button
     fetch_button = mo.ui.run_button(label="Fetch S&P 500 Data")
 
-    mo.md(
-        f"""
+    mo.md(f"""
         ---
 
         **Selected range:** {start_date.value} to {end_date.value}
@@ -87,8 +80,7 @@ def _(end_date, interval, mo, start_date, use_cache):
         **Use cache:** {use_cache.value}
 
         {fetch_button}
-        """
-    )
+        """)
     return (fetch_button,)
 
 
@@ -147,8 +139,7 @@ def _(df_sp500, fetch_button, mo):
     # Display summary statistics
     summary_output = None
     if fetch_button.value and df_sp500 is not None:
-        summary_output = mo.md(
-            f"""
+        summary_output = mo.md(f"""
             ## Data Summary
 
             **Total trading days:** {len(df_sp500)}
@@ -161,8 +152,7 @@ def _(df_sp500, fetch_button, mo):
             - **Min Close:** ${df_sp500["Close"].min():,.2f}
             - **Max Close:** ${df_sp500["Close"].max():,.2f}
             - **Std Dev:** ${df_sp500["Close"].std():,.2f}
-            """
-        )
+            """)
 
     summary_output
     return
@@ -196,13 +186,11 @@ def _(df_sp500, fetch_button, mo, plt):
 
         plt.tight_layout()
 
-        chart_output = mo.md(
-            f"""
+        chart_output = mo.md(f"""
             ## Visualization
 
             {mo.as_html(fig)}
-            """
-        )
+            """)
 
     chart_output
     return
@@ -213,8 +201,7 @@ def _(df_sp500, fetch_button, mo):
     # Export options
     export_info = None
     if fetch_button.value and df_sp500 is not None:
-        export_info = mo.md(
-            """
+        export_info = mo.md("""
             ## Export Data
 
             You can export the fetched data using:
@@ -229,8 +216,7 @@ def _(df_sp500, fetch_button, mo):
             # Get just closing prices
             closing_prices = df_sp500['Close']
             ```
-            """
-        )
+            """)
 
     export_info
     return
@@ -238,11 +224,9 @@ def _(df_sp500, fetch_button, mo):
 
 @app.cell
 def _(df_sp500, mo):
-    _df = mo.sql(
-        """
+    _df = mo.sql("""
         select * from df_sp500
-        """
-    )
+        """)
     return
 
 
