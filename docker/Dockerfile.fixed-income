@@ -1,14 +1,14 @@
 # Dockerfile for Fixed Income Streamlit App
-# Optimized for AWS deployment (ECS, App Runner, Elastic Beanstalk)
+# Multi-stage build optimised for minimal image size
 
-FROM python:3.13-slim
+# Stage 1: Builder - install dependencies
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for faster dependency management
@@ -17,16 +17,32 @@ RUN pip install --no-cache-dir uv
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-RUN uv pip install --system --no-cache -r pyproject.toml
+# Install dependencies to a virtual environment
+RUN uv venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    uv pip install --no-cache -r pyproject.toml
+
+# Stage 2: Runtime - minimal image
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install only runtime dependencies (curl for health checks)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
 COPY src/ ./src/
 COPY app_fixed_income/ ./app_fixed_income/
 
 # Create non-root user for security
-RUN useradd --create-home --shell /bin/bash appuser
-RUN chown -R appuser:appuser /app
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
 USER appuser
 
 # Expose Streamlit default port

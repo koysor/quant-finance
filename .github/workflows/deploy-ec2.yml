@@ -48,14 +48,23 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
-            # Clean up unused Docker resources before building
-            docker system prune -f
+            # Aggressive cleanup to free disk space
+            docker system prune -af --volumes || true
+            docker builder prune -af || true
+            sudo rm -rf /tmp/* 2>/dev/null || true
 
-            # Build images individually
+            # Build images one at a time with cleanup between builds
             docker build --no-cache -f docker/Dockerfile.quant-finance -t quant-finance .
+            docker builder prune -f || true
+
             docker build --no-cache -f docker/Dockerfile.options -t options .
+            docker builder prune -f || true
+
             docker build --no-cache -f docker/Dockerfile.fixed-income -t fixed-income .
+            docker builder prune -f || true
+
             docker build --no-cache -f docker/Dockerfile.portfolio-management -t portfolio-management .
+            docker builder prune -f || true
 
             # Restart all services
             cd docker
