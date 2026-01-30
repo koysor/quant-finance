@@ -144,7 +144,38 @@ The apps are deployed on an AWS EC2 t2.micro instance (free tier eligible).
    sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
    ```
 
-### Update Deployed Apps
+### Update Deployed Apps (Automated - Recommended)
+
+Simply push to the `main` branch. GitHub Actions will:
+1. Build Docker images on GitHub runners
+2. Push images to GHCR
+3. SSH into EC2 and pull the new images
+4. Restart containers with the updated images
+
+```bash
+git push origin main
+# Monitor at: https://github.com/koysor/quant-finance/actions
+```
+
+### Update Deployed Apps (Manual - Using Pre-Built Images)
+
+If you need to manually update the EC2 deployment using images from GHCR:
+
+```bash
+cd ~/quant-finance
+git pull
+cd docker
+docker-compose -f docker-compose.prod.yml down
+docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
+docker pull ghcr.io/koysor/quant-finance/options:latest
+docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
+docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Update Deployed Apps (Manual - Building Locally)
+
+If you need to build images locally on EC2 (not recommended due to resource constraints):
 
 ```bash
 cd ~/quant-finance
@@ -160,6 +191,43 @@ sudo docker run -d -p 8502:8501 --name options --restart unless-stopped options-
 sudo docker run -d -p 8503:8501 --name fixed-income --restart unless-stopped fixed-income-app
 sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
 ```
+
+**Note:** Building on t2.micro often fails due to memory and disk constraints. Use pre-built images from GHCR instead.
+
+## GitHub Container Registry (GHCR)
+
+Docker images are built on GitHub-hosted runners and published to [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) (GHCR). The packages are publicly visible at:
+
+**https://github.com/koysor?tab=packages&visibility=public**
+
+### Available Images
+
+| Image | Pull Command |
+|-------|--------------|
+| Quant Finance | `docker pull ghcr.io/koysor/quant-finance/quant-finance:latest` |
+| Options | `docker pull ghcr.io/koysor/quant-finance/options:latest` |
+| Fixed Income | `docker pull ghcr.io/koysor/quant-finance/fixed-income:latest` |
+| Portfolio Management | `docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest` |
+
+### Why Pre-Built Images?
+
+Building Docker images on the EC2 t2.micro instance has several drawbacks:
+
+1. **Resource constraints** - The t2.micro has only 1GB RAM and limited CPU. Building images with large dependencies (NumPy, SciPy, Pandas) frequently causes out-of-memory errors and very slow builds.
+
+2. **Disk space** - Building images requires significant temporary disk space for layers and caches. The t2.micro's 8GB default storage fills up quickly, causing failed builds.
+
+3. **Build time** - Builds that take seconds on a modern laptop can take 10+ minutes on t2.micro, during which the applications are unavailable.
+
+4. **Reliability** - Pre-built images are tested and verified before deployment. If an image fails to build on GitHub Actions, it won't be deployed, preventing broken deployments.
+
+By building on GitHub's runners (which have 7GB RAM and fast CPUs) and pushing to GHCR, the EC2 instance only needs to pull the pre-built images—a fast and reliable operation.
+
+### Image Tags
+
+Each image is tagged with:
+- `latest` - Updated on every push to the `main` branch
+- `<sha>` - Git commit SHA for traceability (e.g., `b9a30ea`)
 
 ## CI/CD with GitHub Actions
 
@@ -186,10 +254,42 @@ Automatic deployment on every push to `main`.
 ### How It Works
 
 The workflow at `.github/workflows/deploy-ec2.yml`:
-1. Runs code quality checks (Black, Ruff)
-2. SSHs into EC2 instance
-3. Pulls latest code
-4. Rebuilds and restarts containers
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         GitHub Actions Pipeline                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  1. Code Quality      Black formatting + Ruff linting                    │
+│         ↓                                                                │
+│  2. Build & Push      Build 4 Docker images in parallel                  │
+│     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/*            │
+│         ↓                                                                │
+│  3. Deploy            SSH to EC2, pull images from GHCR                  │
+│     (EC2)             docker-compose -f docker-compose.prod.yml up       │
+│         ↓                                                                │
+│  4. Health Check      Verify all apps respond on ports 8501-8504         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Code quality checks** - Black and Ruff run on GitHub runners
+2. **Build and push** - Four Docker images built in parallel on GitHub runners, pushed to GHCR
+3. **Deploy to EC2** - SSH into EC2, pull pre-built images from GHCR (no building on EC2)
+4. **Health checks** - Verify all applications are responding
+
+### Production vs Local Docker Compose
+
+| File | Purpose | Images |
+|------|---------|--------|
+| `docker-compose.yml` | Local development | Builds from Dockerfiles |
+| `docker-compose.prod.yml` | Production (EC2) | Pulls from GHCR |
+
+The production compose file uses pre-built images:
+
+```yaml
+services:
+  quant-finance:
+    image: ghcr.io/koysor/quant-finance/quant-finance:latest
+```
 
 ## Configuration
 

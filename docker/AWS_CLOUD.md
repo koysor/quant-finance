@@ -37,26 +37,31 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 ## Deployment Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        AWS EC2 Instance                         │
-│                         (t2.micro)                              │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                    Docker Compose                         │  │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │  │
-│  │  │ Quant       │ │ Options     │ │ Fixed       │         │  │
-│  │  │ Finance     │ │ App         │ │ Income      │         │  │
-│  │  │ :8501       │ │ :8502       │ │ :8503       │         │  │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘         │  │
-│  │  ┌─────────────┐                                          │  │
-│  │  │ Portfolio   │                                          │  │
-│  │  │ Management  │                                          │  │
-│  │  │ :8504       │                                          │  │
-│  │  └─────────────┘                                          │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    koysor.duckdns.org
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           GitHub Actions                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │  Build Docker Images → Push to GHCR                              │    │
+│  │  (ghcr.io/koysor/quant-finance/*)                                │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Pull images
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          AWS EC2 Instance                                │
+│                            (t2.micro)                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                    Docker Compose (prod)                         │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐  │    │
+│  │  │ Quant       │ │ Options     │ │ Fixed       │ │ Portfolio │  │    │
+│  │  │ Finance     │ │ App         │ │ Income      │ │ Mgmt      │  │    │
+│  │  │ :8501       │ │ :8502       │ │ :8503       │ │ :8504     │  │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                          koysor.duckdns.org
 ```
 
 ## Deployed Applications
@@ -73,10 +78,24 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 Deployment is automated via GitHub Actions (`.github/workflows/deploy-ec2.yml`):
 
 1. **Code Quality Checks** - Black formatting and Ruff linting run on GitHub-hosted runners
-2. **SSH Deployment** - On successful checks, connects to EC2 via SSH using `appleboy/ssh-action`
-3. **Docker Build** - Clones/updates repository and builds Docker images on EC2
-4. **Container Orchestration** - Docker Compose starts all four Streamlit applications
-5. **Health Checks** - Verifies all applications are responding on their respective ports
+2. **Build & Push Images** - Docker images are built in parallel on GitHub runners and pushed to GitHub Container Registry (GHCR)
+3. **SSH Deployment** - Connects to EC2 via SSH using `appleboy/ssh-action`
+4. **Pull Images** - EC2 pulls pre-built images from GHCR (no building on EC2)
+5. **Container Orchestration** - Docker Compose starts all four Streamlit applications using `docker-compose.prod.yml`
+6. **Health Checks** - Verifies all applications are responding on their respective ports
+
+### GitHub Container Registry (GHCR)
+
+Docker images are publicly available at: **https://github.com/koysor?tab=packages&visibility=public**
+
+| Image | URL |
+|-------|-----|
+| Quant Finance | `ghcr.io/koysor/quant-finance/quant-finance:latest` |
+| Options | `ghcr.io/koysor/quant-finance/options:latest` |
+| Fixed Income | `ghcr.io/koysor/quant-finance/fixed-income:latest` |
+| Portfolio Management | `ghcr.io/koysor/quant-finance/portfolio-management:latest` |
+
+**Why pre-built images?** Building Docker images on the t2.micro instance is problematic due to limited RAM (1GB), disk space constraints, and slow build times. By building on GitHub's runners and pushing to GHCR, the EC2 instance only needs to pull pre-built images—a fast and reliable operation. See [README.md](README.md) for details.
 
 ### GitHub Secrets
 
