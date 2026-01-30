@@ -112,19 +112,26 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
+            # Stop existing containers first
+            cd docker
+            docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+            docker-compose down --remove-orphans 2>/dev/null || true
+            cd ..
+
+            # Aggressive cleanup to free disk space before pulling
+            docker system prune -af --volumes || true
+            docker builder prune -af || true
+            sudo rm -rf /tmp/* 2>/dev/null || true
+
             # Pull latest images from GHCR (public packages, no auth required)
             docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
             docker pull ghcr.io/koysor/quant-finance/options:latest
             docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
             docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
 
-            # Stop existing containers and start with new images
+            # Start services with new images
             cd docker
-            docker-compose -f docker-compose.prod.yml down --remove-orphans || true
             docker-compose -f docker-compose.prod.yml up -d
-
-            # Cleanup old images to save disk space
-            docker image prune -f || true
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
