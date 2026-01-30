@@ -1,8 +1,9 @@
 # Dockerfile for Options Streamlit App
 # Multi-stage build optimised for minimal image size
+# syntax=docker/dockerfile:1
 
 # Stage 1: Builder - install dependencies
-FROM python:3.13-slim AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -12,18 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for faster dependency management
-RUN pip install --no-cache-dir uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies to a virtual environment
-RUN uv venv /opt/venv && \
+# Install dependencies to a virtual environment with BuildKit cache
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    uv pip install --no-cache -r pyproject.toml
+    uv pip install -r pyproject.toml
 
 # Stage 2: Runtime - minimal image
-FROM python:3.13-slim
+FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
