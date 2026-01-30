@@ -1,0 +1,35 @@
+# Docker Compose for production deployment on EC2
+# Uses pre-built images from GitHub Container Registry (GHCR)
+
+services:
+  quant-finance:
+    image: ghcr.io/koysor/quant-finance/quant-finance:latest
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  options:
+    image: ghcr.io/koysor/quant-finance/options:latest
+    ports:
+      - "8502:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  fixed-income:
+    image: ghcr.io/koysor/quant-finance/fixed-income:latest
+    ports:
+      - "8503:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+
+  portfolio-management:
+    image: ghcr.io/koysor/quant-finance/portfolio-management:latest
+    ports:
+      - "8504:8501"
+    restart: unless-stopped
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
