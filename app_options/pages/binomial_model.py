@@ -7,8 +7,20 @@ st.set_page_config(layout="wide")
 st.markdown("### The Binomial Model for Option Pricing")
 
 
+st.info(
+    "The binomial model is useful in learning about Options Pricing concepts "
+    "because it shows a simplified step-by-step representation "
+    "of the up-and-down movement on an underlying asset.  "
+    "At the end of the binomial tree we know exactly what the option is worth in each possible future scenario. "
+    "E.g. different share prices at expiry. "
+    "We then work backwards through the tree, combining these possible payoffs with probabilities and discounting, "
+    "to get a fair price for the option today."
+)
+
+
 st.write(
-    "The Binomial Model is a **discrete-time model** for pricing options (as opposed to continuous time). It uses a **binomial tree** to represent the possible paths that the underlying asset price can take over time."
+    "The Binomial Model is a **discrete-time model** for pricing options (as opposed to continuous time). "
+    "It uses a **binomial tree** to represent the possible paths that the underlying asset price can take over time."
 )
 st.write(
     "The model assumes that the price of the underlying asset can move up or down by a certain factor in each time step, "
@@ -19,7 +31,9 @@ st.write(
 st.write(
     "The Binomial Model: \n"
     "- Is particularly useful for pricing American options, which can be exercised at any time before expiration. \n"
-    "- Is based on the principle of risk-neutral valuation, which assumes that investors are indifferent to risk and that the expected return on the underlying asset is equal to the risk-free rate."
+    "- Is based on the principle of risk-neutral valuation, "
+    "which assumes that investors are indifferent to risk and that the expected return on the underlying asset "
+    "is equal to the risk-free rate."
 )
 
 
@@ -73,7 +87,8 @@ st.markdown("### Worked Example on a European Call Option")
 
 st.write(
     "If we imagine a simple scenario where the underlying stock price on a Call Option can can only have "
-    "one of two possible values after one time step, we can use the Binomial Model to calculate the value of the option. "
+    "one of two possible values after one time step, "
+    "we can use the Binomial Model to calculate the value of the option. "
 )
 
 
@@ -209,11 +224,14 @@ with st.expander("Binomial Model Assumptions"):
         "5. The model assumes that the option price is calculated at specific discrete time intervals."
     )
     st.write(
-        "6. The model assumes that the underlying asset price follows a random walk, which means that the future price is uncertain and can move in any direction."
+        "6. The model assumes that the underlying asset price follows a random walk, "
+        "which means that the future price is uncertain and can move in any direction."
     )
     st.write(
-        "7. The model assumes that the underlying asset price follows a lognormal distribution, which means that the logarithm of the price follows a normal distribution."
+        "7. The model assumes that the underlying asset price follows a lognormal distribution, "
+        "which means that the logarithm of the price follows a normal distribution."
     )
     st.write(
-        "8. The model assumes that the option price is a function of the underlying asset price, the strike price, the time to expiration, and the risk-free rate."
+        "8. The model assumes that the option price is a function of the underlying asset price, "
+        "the strike price, the time to expiration, and the risk-free rate."
     )
