@@ -24,6 +24,7 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=options
 
   fixed-income:
     image: fixed-income
@@ -35,6 +36,7 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=fixed-income
 
   portfolio-management:
     image: portfolio-management
@@ -46,3 +48,4 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=portfolio

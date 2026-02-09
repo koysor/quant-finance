@@ -133,6 +133,14 @@ jobs:
             cd docker
             docker-compose -f docker-compose.prod.yml up -d
 
+            # Install and configure Nginx reverse proxy
+            if ! command -v nginx &> /dev/null; then
+              sudo amazon-linux-extras install nginx1 -y 2>/dev/null || sudo yum install -y nginx
+              sudo systemctl enable nginx
+            fi
+            sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
+            sudo nginx -t && sudo systemctl reload nginx || sudo systemctl start nginx
+
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -155,17 +163,17 @@ jobs:
             done
 
             # Check health endpoints
-            curl -f http://localhost:8501/_stcore/health && echo " Quant Finance OK"
-            curl -f http://localhost:8502/_stcore/health && echo " Options OK"
-            curl -f http://localhost:8503/_stcore/health && echo " Fixed Income OK"
-            curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
+            curl -f http://localhost:8501/quant/_stcore/health && echo " Quant Finance OK"
+            curl -f http://localhost:8502/options/_stcore/health && echo " Options OK"
+            curl -f http://localhost:8503/fixed-income/_stcore/health && echo " Fixed Income OK"
+            curl -f http://localhost:8504/portfolio/_stcore/health && echo " Portfolio OK"
             echo "All health checks passed!"
 
       - name: Deployment summary
         run: |
           echo "Deployed to EC2"
           echo "Apps available at:"
-          echo "  - http://${{ secrets.EC2_HOST }}:8501/quant (Quant Finance)"
-          echo "  - http://${{ secrets.EC2_HOST }}:8502 (Options)"
-          echo "  - http://${{ secrets.EC2_HOST }}:8503 (Fixed Income)"
-          echo "  - http://${{ secrets.EC2_HOST }}:8504 (Portfolio)"
+          echo "  - http://${{ secrets.EC2_HOST }}/quant/ (Quant Finance)"
+          echo "  - http://${{ secrets.EC2_HOST }}/options/ (Options)"
+          echo "  - http://${{ secrets.EC2_HOST }}/fixed-income/ (Fixed Income)"
+          echo "  - http://${{ secrets.EC2_HOST }}/portfolio/ (Portfolio)"

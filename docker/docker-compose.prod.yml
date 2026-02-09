@@ -18,6 +18,7 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=options
 
   fixed-income:
     image: ghcr.io/koysor/quant-finance/fixed-income:latest
@@ -26,6 +27,7 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=fixed-income
 
   portfolio-management:
     image: ghcr.io/koysor/quant-finance/portfolio-management:latest
@@ -34,3 +36,4 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=portfolio

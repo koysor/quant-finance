@@ -26,8 +26,7 @@ The EC2 instance requires the following inbound rules:
 | Port      | Protocol | Purpose                            |
 | --------- | -------- | ---------------------------------- |
 | 22        | TCP      | SSH access for deployment          |
-| 8501-8505 | TCP      | Streamlit application access       |
-| 80        | TCP      | HTTP (optional, for reverse proxy) |
+| 80        | TCP      | HTTP (Nginx reverse proxy)         |
 | 443       | TCP      | HTTPS (optional, for SSL)          |
 
 ### Elastic IP (Recommended)
@@ -50,6 +49,13 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          AWS EC2 Instance                                │
 │                            (t2.micro)                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                  Nginx Reverse Proxy (:80)                       │    │
+│  │    /quant/ → :8501  /options/ → :8502  /fixed-income/ → :8503   │    │
+│  │    /portfolio/ → :8504                                           │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                    │                                      │
+│                                    ▼                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │                    Docker Compose (prod)                         │    │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐  │    │
@@ -82,7 +88,8 @@ Deployment is automated via GitHub Actions (`.github/workflows/deploy-ec2.yml`):
 3. **SSH Deployment** - Connects to EC2 via SSH using `appleboy/ssh-action`
 4. **Pull Images** - EC2 pulls pre-built images from GHCR (no building on EC2)
 5. **Container Orchestration** - Docker Compose starts all four Streamlit applications using `docker-compose.prod.yml`
-6. **Health Checks** - Verifies all applications are responding on their respective ports
+6. **Nginx Configuration** - Deploys `docker/nginx.conf` to the EC2 instance and reloads Nginx
+7. **Health Checks** - Verifies all applications are responding on their base URL paths
 
 ### GitHub Container Registry (GHCR)
 

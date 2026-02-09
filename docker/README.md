@@ -4,47 +4,52 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 
 ## Available Applications
 
-| Application | Dockerfile | Port | Description |
-|-------------|------------|------|-------------|
-| Quantitative Finance | `Dockerfile.quant-finance` | 8501 | Stochastic processes, Greeks, volatility modeling, risk management |
-| Options | `Dockerfile.options` | 8502 | Options pricing models, binomial trees, Black-Scholes |
-| Fixed Income | `Dockerfile.fixed-income` | 8503 | Bond pricing and fixed income securities |
-| Portfolio Management | `Dockerfile.portfolio-management` | 8504 | Modern Portfolio Theory, CAPM, alpha analysis |
+| Application | Dockerfile | Port | URL Path | Description |
+|-------------|------------|------|----------|-------------|
+| Quantitative Finance | `Dockerfile.quant-finance` | 8501 | `/quant/` | Stochastic processes, Greeks, volatility modelling, risk management |
+| Options | `Dockerfile.options` | 8502 | `/options/` | Options pricing models, binomial trees, Black-Scholes |
+| Fixed Income | `Dockerfile.fixed-income` | 8503 | `/fixed-income/` | Bond pricing and fixed income securities |
+| Portfolio Management | `Dockerfile.portfolio-management` | 8504 | `/portfolio/` | Modern Portfolio Theory, CAPM, alpha analysis |
 
 ## Live URLs
 
-### Via Domain (Recommended)
+All applications are served via an Nginx reverse proxy on port 80, using path-based routing.
 
 | App | URL |
 |-----|-----|
-| Quant Finance | http://koysor.duckdns.org:8501 |
-| Options | http://koysor.duckdns.org:8502 |
-| Fixed Income | http://koysor.duckdns.org:8503 |
-| Portfolio Management | http://koysor.duckdns.org:8504 |
-| Maths Python | http://koysor.duckdns.org:8505 |
+| Quant Finance | http://koysor.duckdns.org/quant/ |
+| Options | http://koysor.duckdns.org/options/ |
+| Fixed Income | http://koysor.duckdns.org/fixed-income/ |
+| Portfolio Management | http://koysor.duckdns.org/portfolio/ |
 
-### Via IP Address
+## Reverse Proxy (Nginx)
 
-| App | URL |
-|-----|-----|
-| Quant Finance | http://13.50.72.89:8501 |
-| Options | http://13.50.72.89:8502 |
-| Fixed Income | http://13.50.72.89:8503 |
-| Portfolio Management | http://13.50.72.89:8504 |
-| Maths Python | http://13.50.72.89:8505 |
+An Nginx reverse proxy runs on port 80 and routes requests to the correct Streamlit container based on the URL path. The Nginx configuration is version-controlled at `docker/nginx.conf` and deployed automatically via GitHub Actions.
+
+Each Streamlit app has a `baseUrlPath` configured so that it knows its subpath:
+
+```
+Client Request           Nginx                 Docker Container
+──────────────           ─────                 ────────────────
+/quant/           ──►    proxy_pass :8501  ──► quant-finance    (baseUrlPath=quant)
+/options/         ──►    proxy_pass :8502  ──► options           (baseUrlPath=options)
+/fixed-income/    ──►    proxy_pass :8503  ──► fixed-income      (baseUrlPath=fixed-income)
+/portfolio/       ──►    proxy_pass :8504  ──► portfolio-mgmt    (baseUrlPath=portfolio)
+```
+
+The root URL (`/`) redirects to `/quant/`.
 
 ## Port Mapping Explained
 
-All Streamlit apps run on port 8501 **inside** their containers. Docker maps each to a unique **external** port on the EC2 host:
+All Streamlit apps run on port 8501 **inside** their containers. Docker maps each to a unique **external** port on the EC2 host. Nginx then routes path-based URLs to these ports:
 
 ```
-EC2 Host Port    Container Port    App
-─────────────    ──────────────    ─────────────────────
-8501        ──►  8501              quant-finance
-8502        ──►  8501              options
-8503        ──►  8501              fixed-income
-8504        ──►  8501              portfolio-management
-8505        ──►  8501              maths-python (separate repo)
+EC2 Host Port    Container Port    App                   URL Path
+─────────────    ──────────────    ─────────────────     ────────────
+8501        ──►  8501              quant-finance         /quant/
+8502        ──►  8501              options               /options/
+8503        ──►  8501              fixed-income          /fixed-income/
+8504        ──►  8501              portfolio-management  /portfolio/
 ```
 
 The `-p` flag syntax: `-p <host-port>:<container-port>`
@@ -58,13 +63,12 @@ docker run -p 8502:8501 options-app
 
 ### Adding New Apps
 
-To deploy another Streamlit app, choose the next available port (8506, 8507, etc.):
+To deploy another Streamlit app:
 
-```bash
-docker run -d -p 8506:8501 --name new-app --restart unless-stopped new-app-image
-```
-
-Remember to add the new port to the EC2 security group.
+1. Choose the next available port (e.g., 8505)
+2. Set `--server.baseUrlPath` to the desired URL path
+3. Add a corresponding `location` block in `docker/nginx.conf`
+4. Remember to add the new port to the EC2 security group
 
 ## Local Development
 
@@ -83,10 +87,10 @@ docker-compose down
 ```
 
 **Local URLs:**
-- Quantitative Finance: http://localhost:8501
-- Options: http://localhost:8502
-- Fixed Income: http://localhost:8503
-- Portfolio Management: http://localhost:8504
+- Quantitative Finance: http://localhost:8501/quant/
+- Options: http://localhost:8502/options/
+- Fixed Income: http://localhost:8503/fixed-income/
+- Portfolio Management: http://localhost:8504/portfolio/
 
 ### Build Individual Images
 
@@ -144,6 +148,14 @@ The apps are deployed on an AWS EC2 t2.micro instance (free tier eligible).
    sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
    ```
 
+5. **Install and configure Nginx**
+   ```bash
+   sudo dnf install -y nginx
+   sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
+   sudo nginx -t && sudo systemctl start nginx
+   sudo systemctl enable nginx
+   ```
+
 ### Update Deployed Apps (Automated - Recommended)
 
 Simply push to the `main` branch. GitHub Actions will:
@@ -151,6 +163,7 @@ Simply push to the `main` branch. GitHub Actions will:
 2. Push images to GHCR
 3. SSH into EC2 and pull the new images
 4. Restart containers with the updated images
+5. Deploy the Nginx configuration and reload Nginx
 
 ```bash
 git push origin main
@@ -171,6 +184,8 @@ docker pull ghcr.io/koysor/quant-finance/options:latest
 docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
 docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
 docker-compose -f docker-compose.prod.yml up -d
+sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ### Update Deployed Apps (Manual - Building Locally)
@@ -265,16 +280,16 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 │     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/*            │
 │         ↓                                                                │
 │  3. Deploy            SSH to EC2, pull images from GHCR                  │
-│     (EC2)             docker-compose -f docker-compose.prod.yml up       │
+│     (EC2)             docker-compose up + deploy nginx.conf              │
 │         ↓                                                                │
-│  4. Health Check      Verify all apps respond on ports 8501-8504         │
+│  4. Health Check      Verify all apps respond on their base URL paths    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 1. **Code quality checks** - Black and Ruff run on GitHub runners
 2. **Build and push** - Four Docker images built in parallel on GitHub runners, pushed to GHCR
-3. **Deploy to EC2** - SSH into EC2, pull pre-built images from GHCR (no building on EC2)
-4. **Health checks** - Verify all applications are responding
+3. **Deploy to EC2** - SSH into EC2, pull pre-built images from GHCR (no building on EC2), deploy Nginx config
+4. **Health checks** - Verify all applications are responding on their base URL paths
 
 ### Production vs Local Docker Compose
 
@@ -300,12 +315,13 @@ services:
 | `STREAMLIT_SERVER_HEADLESS` | Run without browser | `true` |
 | `STREAMLIT_SERVER_PORT` | Application port | `8501` |
 | `STREAMLIT_SERVER_ADDRESS` | Bind address | `0.0.0.0` |
+| `STREAMLIT_SERVER_BASE_URL_PATH` | URL subpath for reverse proxy routing | App-specific (e.g., `quant`, `options`) |
 
 ### Health Checks
 
-All Dockerfiles include health checks:
+All Dockerfiles include health checks using the app's base URL path:
 
-- **Endpoint:** `/_stcore/health`
+- **Endpoint:** `/<baseUrlPath>/_stcore/health` (e.g., `/quant/_stcore/health`)
 - **Interval:** 30 seconds
 - **Timeout:** 10 seconds
 - **Retries:** 3
@@ -336,7 +352,18 @@ sudo docker restart quant-finance
 
 ### Health check failing
 ```bash
-curl http://localhost:8501/_stcore/health
+# Check individual app health (include baseUrlPath)
+curl http://localhost:8501/quant/_stcore/health
+curl http://localhost:8502/options/_stcore/health
+curl http://localhost:8503/fixed-income/_stcore/health
+curl http://localhost:8504/portfolio/_stcore/health
+```
+
+### Check Nginx status
+```bash
+sudo systemctl status nginx
+sudo nginx -t  # test configuration
+sudo cat /var/log/nginx/error.log  # view error logs
 ```
 
 ### Out of memory
@@ -368,83 +395,24 @@ Wait 1-2 minutes, then access:
 
 | App | URL |
 |-----|-----|
-| Quant Finance | http://koysor.duckdns.org:8501 |
-| Options | http://koysor.duckdns.org:8502 |
-| Fixed Income | http://koysor.duckdns.org:8503 |
-| Portfolio Management | http://koysor.duckdns.org:8504 |
-| Maths Python | http://koysor.duckdns.org:8505 |
+| Quant Finance | http://koysor.duckdns.org/quant/ |
+| Options | http://koysor.duckdns.org/options/ |
+| Fixed Income | http://koysor.duckdns.org/fixed-income/ |
+| Portfolio Management | http://koysor.duckdns.org/portfolio/ |
 
-### Step 3: Remove Port Numbers with Nginx (Optional)
+### Step 3: Nginx Reverse Proxy
 
-Access apps without ports (e.g., `http://koysor.duckdns.org/options/`).
-
-Connect to EC2 via Instance Connect and run:
+The Nginx configuration is managed as part of the repository at `docker/nginx.conf` and deployed automatically via GitHub Actions. To set it up manually for the first time:
 
 ```bash
 sudo dnf install -y nginx
-
-sudo tee /etc/nginx/conf.d/streamlit.conf > /dev/null <<'EOF'
-server {
-    listen 80;
-    server_name koysor.duckdns.org;
-
-    location / {
-        proxy_pass http://localhost:8501;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 86400;
-    }
-
-    location /options/ {
-        proxy_pass http://localhost:8502/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 86400;
-    }
-
-    location /fixed-income/ {
-        proxy_pass http://localhost:8503/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 86400;
-    }
-
-    location /portfolio/ {
-        proxy_pass http://localhost:8504/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 86400;
-    }
-
-    location /maths/ {
-        proxy_pass http://localhost:8505/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_read_timeout 86400;
-    }
-}
-EOF
-
+sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
+sudo nginx -t
 sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
 
-Access at:
-- http://koysor.duckdns.org/ (Quant Finance)
-- http://koysor.duckdns.org/options/
-- http://koysor.duckdns.org/fixed-income/
-- http://koysor.duckdns.org/portfolio/
-- http://koysor.duckdns.org/maths/
+Subsequent updates to the Nginx configuration are deployed automatically when pushing to the `main` branch.
 
 ### Step 4: Add Free HTTPS (Optional)
 
