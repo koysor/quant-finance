@@ -139,39 +139,9 @@ jobs:
               sudo systemctl enable nginx
             fi
 
-            # Remove default server block that conflicts with port 80
-            # Replace nginx.conf with a minimal config that only loads conf.d includes
-            sudo tee /etc/nginx/nginx.conf > /dev/null <<'NGINXCONF'
-            user nginx;
-            worker_processes auto;
-            error_log /var/log/nginx/error.log;
-            pid /run/nginx.pid;
-
-            include /usr/share/nginx/modules/*.conf;
-
-            events {
-                worker_connections 1024;
-            }
-
-            http {
-                log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                                  '$status $body_bytes_sent "$http_referer" '
-                                  '"$http_user_agent" "$http_x_forwarded_for"';
-
-                access_log  /var/log/nginx/access.log  main;
-
-                sendfile            on;
-                tcp_nopush          on;
-                keepalive_timeout   65;
-                types_hash_max_size 4096;
-
-                include             /etc/nginx/mime.types;
-                default_type        application/octet-stream;
-
-                include /etc/nginx/conf.d/*.conf;
-            }
-            NGINXCONF
-
+            # Replace default nginx.conf (which has a conflicting port 80 server block)
+            # with a minimal config that only loads conf.d includes
+            sudo cp ~/quant-finance/docker/nginx-main.conf /etc/nginx/nginx.conf
             sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
             sudo nginx -t
             sudo systemctl restart nginx
