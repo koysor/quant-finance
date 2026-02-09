@@ -138,8 +138,15 @@ jobs:
               sudo amazon-linux-extras install nginx1 -y 2>/dev/null || sudo yum install -y nginx
               sudo systemctl enable nginx
             fi
+
+            # Remove default server block that conflicts with port 80
+            if grep -q 'listen.*80' /etc/nginx/nginx.conf 2>/dev/null; then
+              sudo sed -i '/^[[:space:]]*server {/,/^[[:space:]]*}/d' /etc/nginx/nginx.conf
+            fi
+
             sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
-            sudo nginx -t && sudo systemctl reload nginx || sudo systemctl start nginx
+            sudo nginx -t
+            sudo systemctl restart nginx
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
