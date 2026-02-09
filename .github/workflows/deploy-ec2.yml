@@ -140,9 +140,37 @@ jobs:
             fi
 
             # Remove default server block that conflicts with port 80
-            if grep -q 'listen.*80' /etc/nginx/nginx.conf 2>/dev/null; then
-              sudo sed -i '/^[[:space:]]*server {/,/^[[:space:]]*}/d' /etc/nginx/nginx.conf
-            fi
+            # Replace nginx.conf with a minimal config that only loads conf.d includes
+            sudo tee /etc/nginx/nginx.conf > /dev/null <<'NGINXCONF'
+            user nginx;
+            worker_processes auto;
+            error_log /var/log/nginx/error.log;
+            pid /run/nginx.pid;
+
+            include /usr/share/nginx/modules/*.conf;
+
+            events {
+                worker_connections 1024;
+            }
+
+            http {
+                log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                                  '$status $body_bytes_sent "$http_referer" '
+                                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+                access_log  /var/log/nginx/access.log  main;
+
+                sendfile            on;
+                tcp_nopush          on;
+                keepalive_timeout   65;
+                types_hash_max_size 4096;
+
+                include             /etc/nginx/mime.types;
+                default_type        application/octet-stream;
+
+                include /etc/nginx/conf.d/*.conf;
+            }
+            NGINXCONF
 
             sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
             sudo nginx -t
