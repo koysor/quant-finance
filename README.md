@@ -41,10 +41,16 @@ This project features several Streamlit applications, providing interactive acce
 
 * **AWS EC2 Deployments:** For more specialised applications, the following are deployed on an AWS EC2 instance.
 
-  * **Quant Finance:** http://koysor.duckdns.org/
+  * **Quant Finance:** http://koysor.duckdns.org/quant/
   * **Options:** http://koysor.duckdns.org/options/
   * **Fixed Income:** http://koysor.duckdns.org/fixed-income/
   * **Portfolio Management:** http://koysor.duckdns.org/portfolio/
+
+## App Availability Monitoring
+
+Uptime and availability for all live Streamlit applications is tracked via UptimeRobot. View the current status and historical uptime at:
+
+**[Status Page](https://stats.uptimerobot.com/75Jq7PxIkL)**
 
 ## Interactive Marimo Notebooks
 

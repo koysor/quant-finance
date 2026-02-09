@@ -68,7 +68,7 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 
 | Application          | Port | URL                                     |
 | -------------------- | ---- | --------------------------------------- |
-| Quantitative Finance | 8501 | http://koysor.duckdns.org/              |
+| Quantitative Finance | 8501 | http://koysor.duckdns.org/quant/        |
 | Options              | 8502 | http://koysor.duckdns.org/options/      |
 | Fixed Income         | 8503 | http://koysor.duckdns.org/fixed-income/ |
 | Portfolio Management | 8504 | http://koysor.duckdns.org/portfolio/    |

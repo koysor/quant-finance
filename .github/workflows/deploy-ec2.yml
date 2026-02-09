@@ -165,7 +165,7 @@ jobs:
         run: |
           echo "Deployed to EC2"
           echo "Apps available at:"
-          echo "  - http://${{ secrets.EC2_HOST }}:8501 (Quant Finance)"
+          echo "  - http://${{ secrets.EC2_HOST }}:8501/quant (Quant Finance)"
           echo "  - http://${{ secrets.EC2_HOST }}:8502 (Options)"
           echo "  - http://${{ secrets.EC2_HOST }}:8503 (Fixed Income)"
           echo "  - http://${{ secrets.EC2_HOST }}:8504 (Portfolio)"

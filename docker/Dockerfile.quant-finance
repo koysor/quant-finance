@@ -59,4 +59,5 @@ ENTRYPOINT ["streamlit", "run", "app_quant_finance/quantitative_finance.py", \
     "--server.port=8501", \
     "--server.address=0.0.0.0", \
     "--server.headless=true", \
+    "--server.baseUrlPath=quant", \
     "--browser.gatherUsageStats=false"]

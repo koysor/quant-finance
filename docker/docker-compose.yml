@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_BASE_URL_PATH=quant
 
   options:
     image: options
