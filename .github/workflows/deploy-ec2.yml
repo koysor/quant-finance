@@ -106,7 +106,7 @@ jobs:
           script: |
             set -e
 
-            # Clone or update repository (for docker-compose files)
+            # Clone or update repository (for docker-compose and Caddyfile)
             cd ~/quant-finance || git clone https://github.com/koysor/quant-finance.git ~/quant-finance
             cd ~/quant-finance
             git fetch origin
@@ -118,8 +118,16 @@ jobs:
             docker-compose down --remove-orphans 2>/dev/null || true
             cd ..
 
-            # Aggressive cleanup to free disk space before pulling
-            docker system prune -af --volumes || true
+            # Stop nginx if previously installed (Caddy now handles reverse proxy)
+            sudo systemctl stop nginx 2>/dev/null || true
+            sudo systemctl disable nginx 2>/dev/null || true
+
+            # Ensure Caddy certificate volume exists (survives prune)
+            docker volume create caddy_data 2>/dev/null || true
+
+            # Cleanup to free disk space before pulling
+            # Note: no --volumes flag so caddy_data (external) is preserved
+            docker system prune -af || true
             docker builder prune -af || true
             sudo rm -rf /tmp/* 2>/dev/null || true
 
@@ -128,23 +136,11 @@ jobs:
             docker pull ghcr.io/koysor/quant-finance/options:latest
             docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
             docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+            docker pull caddy:2-alpine
 
             # Start services with new images
             cd docker
             docker-compose -f docker-compose.prod.yml up -d
-
-            # Install and configure Nginx reverse proxy
-            if ! command -v nginx &> /dev/null; then
-              sudo amazon-linux-extras install nginx1 -y 2>/dev/null || sudo yum install -y nginx
-              sudo systemctl enable nginx
-            fi
-
-            # Replace default nginx.conf (which has a conflicting port 80 server block)
-            # with a minimal config that only loads conf.d includes
-            sudo cp ~/quant-finance/docker/nginx-main.conf /etc/nginx/nginx.conf
-            sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
-            sudo nginx -t
-            sudo systemctl restart nginx
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
@@ -154,11 +150,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            echo "Waiting for apps to start..."
-            sleep 30
+            echo "Waiting for apps and Caddy to start..."
+            sleep 45
 
-            # Verify all containers are running
-            SERVICES="quant-finance options fixed-income portfolio-management"
+            # Verify all containers are running (including Caddy)
+            SERVICES="quant-finance options fixed-income portfolio-management caddy"
             for service in $SERVICES; do
               if ! docker ps | grep -q "$service"; then
                 echo "Container $service is not running!"
@@ -167,18 +163,24 @@ jobs:
               fi
             done
 
-            # Check health endpoints
-            curl -f http://localhost:8501/quant/_stcore/health && echo " Quant Finance OK"
-            curl -f http://localhost:8502/options/_stcore/health && echo " Options OK"
-            curl -f http://localhost:8503/fixed-income/_stcore/health && echo " Fixed Income OK"
-            curl -f http://localhost:8504/portfolio/_stcore/health && echo " Portfolio OK"
+            # Check Streamlit health endpoints via docker exec
+            cd ~/quant-finance/docker
+            docker-compose -f docker-compose.prod.yml exec -T quant-finance curl -f http://localhost:8501/_stcore/health && echo " Quant Finance OK"
+            docker-compose -f docker-compose.prod.yml exec -T options curl -f http://localhost:8501/_stcore/health && echo " Options OK"
+            docker-compose -f docker-compose.prod.yml exec -T fixed-income curl -f http://localhost:8501/_stcore/health && echo " Fixed Income OK"
+            docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f http://localhost:8501/_stcore/health && echo " Portfolio OK"
+
+            # Check Caddy is responding on port 80
+            curl -sf -o /dev/null http://localhost:80 && echo " Caddy HTTP OK"
+
             echo "All health checks passed!"
 
       - name: Deployment summary
         run: |
-          echo "Deployed to EC2"
+          echo "Deployed to EC2 with Caddy HTTPS reverse proxy"
           echo "Apps available at:"
-          echo "  - http://${{ secrets.EC2_HOST }}/quant/ (Quant Finance)"
-          echo "  - http://${{ secrets.EC2_HOST }}/options/ (Options)"
-          echo "  - http://${{ secrets.EC2_HOST }}/fixed-income/ (Fixed Income)"
-          echo "  - http://${{ secrets.EC2_HOST }}/portfolio/ (Portfolio)"
+          echo "  - https://koysor.duckdns.org/ (Quant Finance)"
+          echo "  - https://koysor.duckdns.org/options/ (Options)"
+          echo "  - https://koysor.duckdns.org/fixed-income/ (Fixed Income)"
+          echo "  - https://koysor.duckdns.org/portfolio/ (Portfolio Management)"
+          echo "  - https://koysor.duckdns.org/maths/ (Maths Python)"

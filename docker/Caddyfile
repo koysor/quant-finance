@@ -1,0 +1,21 @@
+koysor.duckdns.org {
+	handle /options/* {
+		reverse_proxy options:8501
+	}
+
+	handle /fixed-income/* {
+		reverse_proxy fixed-income:8501
+	}
+
+	handle /portfolio/* {
+		reverse_proxy portfolio-management:8501
+	}
+
+	handle /maths/* {
+		reverse_proxy host.docker.internal:8505
+	}
+
+	handle {
+		reverse_proxy quant-finance:8501
+	}
+}

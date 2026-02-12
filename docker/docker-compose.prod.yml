@@ -1,11 +1,31 @@
 # Docker Compose for production deployment on EC2
 # Uses pre-built images from GitHub Container Registry (GHCR)
+# Caddy reverse proxy provides automatic HTTPS via Let's Encrypt
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - quant-finance
+      - options
+      - fixed-income
+      - portfolio-management
+
   quant-finance:
     image: ghcr.io/koysor/quant-finance/quant-finance:latest
-    ports:
-      - "8501:8501"
+    expose:
+      - "8501"
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
@@ -13,8 +33,8 @@ services:
 
   options:
     image: ghcr.io/koysor/quant-finance/options:latest
-    ports:
-      - "8502:8501"
+    expose:
+      - "8501"
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
@@ -22,8 +42,8 @@ services:
 
   fixed-income:
     image: ghcr.io/koysor/quant-finance/fixed-income:latest
-    ports:
-      - "8503:8501"
+    expose:
+      - "8501"
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
@@ -31,9 +51,15 @@ services:
 
   portfolio-management:
     image: ghcr.io/koysor/quant-finance/portfolio-management:latest
-    ports:
-      - "8504:8501"
+    expose:
+      - "8501"
     restart: unless-stopped
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=portfolio
+
+volumes:
+  caddy_data:
+    name: caddy_data
+    external: true
+  caddy_config:

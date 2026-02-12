@@ -13,62 +13,41 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 
 ## Live URLs
 
-All applications are served via an Nginx reverse proxy on port 80, using path-based routing.
-
 | App | URL |
 |-----|-----|
-| Quant Finance | http://koysor.duckdns.org/quant/ |
-| Options | http://koysor.duckdns.org/options/ |
-| Fixed Income | http://koysor.duckdns.org/fixed-income/ |
-| Portfolio Management | http://koysor.duckdns.org/portfolio/ |
+| Quant Finance | https://koysor.duckdns.org/ |
+| Options | https://koysor.duckdns.org/options/ |
+| Fixed Income | https://koysor.duckdns.org/fixed-income/ |
+| Portfolio Management | https://koysor.duckdns.org/portfolio/ |
+| Maths Python | https://koysor.duckdns.org/maths/ |
 
-## Reverse Proxy (Nginx)
+All traffic is served over HTTPS via a [Caddy](https://caddyserver.com/) reverse proxy with automatic Let's Encrypt certificates.
 
-An Nginx reverse proxy runs on port 80 and routes requests to the correct Streamlit container based on the URL path. The Nginx configuration is version-controlled at `docker/nginx.conf` and deployed automatically via GitHub Actions.
+## Production Architecture
 
-Each Streamlit app has a `baseUrlPath` configured so that it knows its subpath:
-
-```
-Client Request           Nginx                 Docker Container
-──────────────           ─────                 ────────────────
-/quant/           ──►    proxy_pass :8501  ──► quant-finance    (baseUrlPath=quant)
-/options/         ──►    proxy_pass :8502  ──► options           (baseUrlPath=options)
-/fixed-income/    ──►    proxy_pass :8503  ──► fixed-income      (baseUrlPath=fixed-income)
-/portfolio/       ──►    proxy_pass :8504  ──► portfolio-mgmt    (baseUrlPath=portfolio)
-```
-
-The root URL (`/`) redirects to `/quant/`.
-
-## Port Mapping Explained
-
-All Streamlit apps run on port 8501 **inside** their containers. Docker maps each to a unique **external** port on the EC2 host. Nginx then routes path-based URLs to these ports:
+In production, a Caddy reverse proxy sits in front of all Streamlit containers. Apps are not exposed directly on host ports — all traffic goes through Caddy on ports 80 (HTTP, redirects to HTTPS) and 443 (HTTPS).
 
 ```
-EC2 Host Port    Container Port    App                   URL Path
-─────────────    ──────────────    ─────────────────     ────────────
-8501        ──►  8501              quant-finance         /quant/
-8502        ──►  8501              options               /options/
-8503        ──►  8501              fixed-income          /fixed-income/
-8504        ──►  8501              portfolio-management  /portfolio/
+Internet (HTTPS :443)
+        │
+   ┌────▼─────┐
+   │   Caddy   │  Automatic Let's Encrypt certificates
+   │  (proxy)  │  HTTP → HTTPS redirect
+   └────┬──────┘
+        ├──► quant-finance:8501      /
+        ├──► options:8501            /options/
+        ├──► fixed-income:8501       /fixed-income/
+        ├──► portfolio-management:8501  /portfolio/
+        └──► host.docker.internal:8505  /maths/ (separate repo)
 ```
 
-The `-p` flag syntax: `-p <host-port>:<container-port>`
+### How It Works
 
-```bash
-docker run -p 8502:8501 options-app
-#             │     │
-#             │     └── Port inside container (always 8501 for Streamlit)
-#             └──────── Port on EC2 (must be unique per app)
-```
-
-### Adding New Apps
-
-To deploy another Streamlit app:
-
-1. Choose the next available port (e.g., 8505)
-2. Set `--server.baseUrlPath` to the desired URL path
-3. Add a corresponding `location` block in `docker/nginx.conf`
-4. Remember to add the new port to the EC2 security group
+- All Streamlit containers run on port 8501 internally and use `expose` (Docker network only, not on host)
+- Non-root apps set `STREAMLIT_SERVER_BASE_URL_PATH` so Streamlit generates correct internal URLs for their path prefix
+- Caddy handles TLS termination, certificate renewal, WebSocket upgrades, and path-based routing
+- The `Caddyfile` in this directory defines all routing rules
+- Certificate data is stored in the `caddy_data` Docker volume (persists across deployments)
 
 ## Local Development
 
@@ -129,31 +108,12 @@ The apps are deployed on an AWS EC2 t2.micro instance (free tier eligible).
    sudo usermod -aG docker ec2-user
    ```
 
-3. **Clone and build**
+3. **Clone and deploy**
    ```bash
    git clone https://github.com/koysor/quant-finance.git
-   cd quant-finance
-
-   sudo docker build -f docker/Dockerfile.quant-finance -t quant-finance-app .
-   sudo docker build -f docker/Dockerfile.options -t options-app .
-   sudo docker build -f docker/Dockerfile.fixed-income -t fixed-income-app .
-   sudo docker build -f docker/Dockerfile.portfolio-management -t portfolio-management-app .
-   ```
-
-4. **Run containers**
-   ```bash
-   sudo docker run -d -p 8501:8501 --name quant-finance --restart unless-stopped quant-finance-app
-   sudo docker run -d -p 8502:8501 --name options --restart unless-stopped options-app
-   sudo docker run -d -p 8503:8501 --name fixed-income --restart unless-stopped fixed-income-app
-   sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
-   ```
-
-5. **Install and configure Nginx**
-   ```bash
-   sudo dnf install -y nginx
-   sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
-   sudo nginx -t && sudo systemctl start nginx
-   sudo systemctl enable nginx
+   cd quant-finance/docker
+   docker volume create caddy_data
+   docker-compose -f docker-compose.prod.yml up -d
    ```
 
 ### Update Deployed Apps (Automated - Recommended)
@@ -162,8 +122,7 @@ Simply push to the `main` branch. GitHub Actions will:
 1. Build Docker images on GitHub runners
 2. Push images to GHCR
 3. SSH into EC2 and pull the new images
-4. Restart containers with the updated images
-5. Deploy the Nginx configuration and reload Nginx
+4. Restart containers with the updated images via Caddy
 
 ```bash
 git push origin main
@@ -178,36 +137,15 @@ If you need to manually update the EC2 deployment using images from GHCR:
 cd ~/quant-finance
 git pull
 cd docker
+docker volume create caddy_data 2>/dev/null || true
 docker-compose -f docker-compose.prod.yml down
 docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
 docker pull ghcr.io/koysor/quant-finance/options:latest
 docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
 docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+docker pull caddy:2-alpine
 docker-compose -f docker-compose.prod.yml up -d
-sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
-sudo nginx -t && sudo systemctl reload nginx
 ```
-
-### Update Deployed Apps (Manual - Building Locally)
-
-If you need to build images locally on EC2 (not recommended due to resource constraints):
-
-```bash
-cd ~/quant-finance
-git pull
-sudo docker stop quant-finance options fixed-income portfolio
-sudo docker rm quant-finance options fixed-income portfolio
-sudo docker build -f docker/Dockerfile.quant-finance -t quant-finance-app .
-sudo docker build -f docker/Dockerfile.options -t options-app .
-sudo docker build -f docker/Dockerfile.fixed-income -t fixed-income-app .
-sudo docker build -f docker/Dockerfile.portfolio-management -t portfolio-management-app .
-sudo docker run -d -p 8501:8501 --name quant-finance --restart unless-stopped quant-finance-app
-sudo docker run -d -p 8502:8501 --name options --restart unless-stopped options-app
-sudo docker run -d -p 8503:8501 --name fixed-income --restart unless-stopped fixed-income-app
-sudo docker run -d -p 8504:8501 --name portfolio --restart unless-stopped portfolio-management-app
-```
-
-**Note:** Building on t2.micro often fails due to memory and disk constraints. Use pre-built images from GHCR instead.
 
 ## GitHub Container Registry (GHCR)
 
@@ -279,17 +217,17 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 │  2. Build & Push      Build 4 Docker images in parallel                  │
 │     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/*            │
 │         ↓                                                                │
-│  3. Deploy            SSH to EC2, pull images from GHCR                  │
-│     (EC2)             docker-compose up + deploy nginx.conf              │
+│  3. Deploy            SSH to EC2, pull images + Caddy from GHCR          │
+│     (EC2)             docker-compose -f docker-compose.prod.yml up       │
 │         ↓                                                                │
-│  4. Health Check      Verify all apps respond on their base URL paths    │
+│  4. Health Check      Verify all apps + Caddy are responding             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 1. **Code quality checks** - Black and Ruff run on GitHub runners
 2. **Build and push** - Four Docker images built in parallel on GitHub runners, pushed to GHCR
-3. **Deploy to EC2** - SSH into EC2, pull pre-built images from GHCR (no building on EC2), deploy Nginx config
-4. **Health checks** - Verify all applications are responding on their base URL paths
+3. **Deploy to EC2** - SSH into EC2, pull pre-built images + Caddy from registries (no building on EC2)
+4. **Health checks** - Verify all Streamlit apps and Caddy reverse proxy are responding
 
 ### Production vs Local Docker Compose
 
@@ -298,12 +236,19 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 | `docker-compose.yml` | Local development | Builds from Dockerfiles |
 | `docker-compose.prod.yml` | Production (EC2) | Pulls from GHCR |
 
-The production compose file uses pre-built images:
+The production compose file uses pre-built images and includes Caddy for HTTPS:
 
 ```yaml
 services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
   quant-finance:
     image: ghcr.io/koysor/quant-finance/quant-finance:latest
+    expose:
+      - "8501"
 ```
 
 ## Configuration
@@ -331,6 +276,8 @@ All Dockerfiles include health checks using the app's base URL path:
 - Images run as non-root user (`appuser`)
 - Only necessary files are copied (see `.dockerignore`)
 - No secrets stored in images
+- Streamlit ports are not exposed on the host (only accessible via Caddy)
+- All traffic encrypted via HTTPS (TLS 1.2+)
 
 ## Troubleshooting
 
@@ -352,18 +299,19 @@ sudo docker restart quant-finance
 
 ### Health check failing
 ```bash
-# Check individual app health (include baseUrlPath)
-curl http://localhost:8501/quant/_stcore/health
-curl http://localhost:8502/options/_stcore/health
-curl http://localhost:8503/fixed-income/_stcore/health
-curl http://localhost:8504/portfolio/_stcore/health
+# Check individual app health via docker exec
+cd ~/quant-finance/docker
+docker-compose -f docker-compose.prod.yml exec -T quant-finance curl -f http://localhost:8501/_stcore/health
+docker-compose -f docker-compose.prod.yml exec -T options curl -f http://localhost:8501/_stcore/health
+docker-compose -f docker-compose.prod.yml exec -T fixed-income curl -f http://localhost:8501/_stcore/health
+docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f http://localhost:8501/_stcore/health
 ```
 
-### Check Nginx status
+### Check Caddy status
 ```bash
-sudo systemctl status nginx
-sudo nginx -t  # test configuration
-sudo cat /var/log/nginx/error.log  # view error logs
+docker logs docker-caddy-1           # view Caddy logs
+docker logs -f docker-caddy-1        # follow Caddy logs
+curl -sf -o /dev/null http://localhost:80 && echo "Caddy OK"
 ```
 
 ### Out of memory
@@ -395,41 +343,42 @@ Wait 1-2 minutes, then access:
 
 | App | URL |
 |-----|-----|
-| Quant Finance | http://koysor.duckdns.org/quant/ |
-| Options | http://koysor.duckdns.org/options/ |
-| Fixed Income | http://koysor.duckdns.org/fixed-income/ |
-| Portfolio Management | http://koysor.duckdns.org/portfolio/ |
+| Quant Finance | https://koysor.duckdns.org/ |
+| Options | https://koysor.duckdns.org/options/ |
+| Fixed Income | https://koysor.duckdns.org/fixed-income/ |
+| Portfolio Management | https://koysor.duckdns.org/portfolio/ |
+| Maths Python | https://koysor.duckdns.org/maths/ |
 
-### Step 3: Nginx Reverse Proxy
+### Step 3: Reverse Proxy and HTTPS (Caddy)
 
-The Nginx configuration is managed as part of the repository at `docker/nginx.conf` and deployed automatically via GitHub Actions. To set it up manually for the first time:
+HTTPS is handled automatically by the Caddy reverse proxy in `docker-compose.prod.yml`. Caddy:
 
-```bash
-sudo dnf install -y nginx
-sudo cp ~/quant-finance/docker/nginx.conf /etc/nginx/conf.d/streamlit.conf
-sudo nginx -t
-sudo systemctl start nginx
-sudo systemctl enable nginx
-```
+- Provisions free Let's Encrypt TLS certificates automatically
+- Redirects HTTP to HTTPS
+- Handles WebSocket upgrades for Streamlit
+- Routes path-based URLs to the correct container
 
-Subsequent updates to the Nginx configuration are deployed automatically when pushing to the `main` branch.
+**Configuration:** The routing rules are defined in `docker/Caddyfile`.
 
-### Step 4: Add Free HTTPS (Optional)
-
-Get a free SSL certificate from Let's Encrypt:
+**Certificates:** Stored in the `caddy_data` Docker volume. This volume is declared as `external` so it survives `docker system prune`. Create it once before first deployment:
 
 ```bash
-sudo dnf install -y python3-pip
-sudo pip3 install certbot certbot-nginx
-sudo certbot --nginx -d koysor.duckdns.org
+docker volume create caddy_data
 ```
 
-Follow the prompts. Certbot will:
-- Obtain SSL certificate
-- Configure Nginx for HTTPS
-- Set up auto-renewal
+**EC2 Security Group:** Ensure ports 80 and 443 are open for inbound traffic:
 
-Access at: https://koysor.duckdns.org/
+| Port | Protocol | Source | Purpose |
+|------|----------|--------|---------|
+| 80 | TCP | `0.0.0.0/0` | HTTP (ACME challenge + redirect to HTTPS) |
+| 443 | TCP | `0.0.0.0/0` | HTTPS (application traffic) |
+
+Ports 8501-8505 can optionally be removed from the security group as they are no longer needed externally.
+
+**First-time setup notes:**
+- If nginx was previously installed, stop and disable it first: `sudo systemctl stop nginx && sudo systemctl disable nginx`
+- Initial certificate provisioning takes a few seconds on first `docker-compose up`
+- Caddy handles certificate renewal automatically (no cron jobs needed)
 
 ### Update DuckDNS IP When It Changes
 
