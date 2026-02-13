@@ -23,7 +23,8 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    uv pip install -r pyproject.toml
+    uv export --no-dev --format requirements-txt > requirements.txt && \
+    uv pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime - minimal image
 FROM python:3.13-slim-bookworm
