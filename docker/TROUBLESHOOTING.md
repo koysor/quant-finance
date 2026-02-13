@@ -21,7 +21,7 @@ Also check that Caddy is running: `docker ps | grep caddy`
 **Cause:** Caddy has not yet provisioned a TLS certificate, or you are accessing the site via HTTP.
 
 **Fix:**
-1. Check Caddy logs for certificate errors: `docker logs docker-caddy-1`
+1. Check Caddy logs for certificate errors: `docker logs quant-finance-caddy-1`
 2. Verify ports 80 and 443 are open in the EC2 security group (Caddy needs port 80 for the ACME HTTP-01 challenge)
 3. Verify the domain `koysor.duckdns.org` resolves to the correct EC2 IP
 4. If nginx was previously installed, ensure it is stopped: `sudo systemctl stop nginx`
@@ -202,7 +202,7 @@ ssh-keygen -R 13.50.72.89
 1. Ensure port 80 is open in the EC2 security group
 2. Ensure `koysor.duckdns.org` resolves to the EC2 IP: `nslookup koysor.duckdns.org`
 3. Ensure no other service (e.g., nginx) is using port 80: `sudo lsof -i :80`
-4. Check Caddy logs: `docker logs docker-caddy-1`
+4. Check Caddy logs: `docker logs quant-finance-caddy-1`
 
 ### Certificate rate limited
 
@@ -214,7 +214,7 @@ ssh-keygen -R 13.50.72.89
 
 ```bash
 # Check Caddy logs
-docker logs docker-caddy-1
+docker logs quant-finance-caddy-1
 
 # Validate Caddyfile syntax
 docker run --rm -v $(pwd)/docker/Caddyfile:/etc/caddy/Caddyfile caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile

@@ -8,6 +8,8 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    mem_limit: 64m
+    memswap_limit: 64m
     ports:
       - "80:80"
       - "443:443"
@@ -29,6 +31,8 @@ services:
     expose:
       - "8501"
     restart: unless-stopped
+    mem_limit: 180m
+    memswap_limit: 256m
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=quant
@@ -38,6 +42,8 @@ services:
     expose:
       - "8501"
     restart: unless-stopped
+    mem_limit: 180m
+    memswap_limit: 256m
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=options
@@ -47,6 +53,8 @@ services:
     expose:
       - "8501"
     restart: unless-stopped
+    mem_limit: 180m
+    memswap_limit: 256m
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=fixed-income
@@ -56,6 +64,8 @@ services:
     expose:
       - "8501"
     restart: unless-stopped
+    mem_limit: 180m
+    memswap_limit: 256m
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=portfolio

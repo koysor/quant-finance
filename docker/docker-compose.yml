@@ -1,5 +1,10 @@
 # Docker Compose for local development and testing
 # Run all four Streamlit applications on different ports
+#
+# Build the shared base image first:
+#   docker build -f docker/Dockerfile.base -t quant-finance-base .
+# Then start all services:
+#   cd docker && docker-compose up --build
 
 name: quant-finance
 

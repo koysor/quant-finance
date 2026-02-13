@@ -53,8 +53,15 @@ Internet (HTTPS :443)
 
 ### Build and Run All Applications
 
+The app Dockerfiles depend on a shared base image that must be built first:
+
 ```bash
 # From the repository root directory
+
+# 1. Build the shared base image (contains Python deps + src/)
+docker build -f docker/Dockerfile.base -t quant-finance-base .
+
+# 2. Build and start all app containers
 cd docker
 docker-compose up --build
 
@@ -75,6 +82,11 @@ docker-compose down
 
 ```bash
 # From the repository root directory
+
+# Build base first (required by all app images)
+docker build -f docker/Dockerfile.base -t quant-finance-base .
+
+# Then build individual app images
 docker build -f docker/Dockerfile.quant-finance -t quant-finance-app .
 docker build -f docker/Dockerfile.options -t options-app .
 docker build -f docker/Dockerfile.fixed-income -t fixed-income-app .
@@ -139,6 +151,7 @@ git pull
 cd docker
 docker volume create caddy_data 2>/dev/null || true
 docker-compose -f docker-compose.prod.yml down
+docker pull ghcr.io/koysor/quant-finance/base:latest
 docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
 docker pull ghcr.io/koysor/quant-finance/options:latest
 docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
@@ -157,6 +170,7 @@ Docker images are built on GitHub-hosted runners and published to [GitHub Contai
 
 | Image | Pull Command |
 |-------|--------------|
+| Base (shared deps) | `docker pull ghcr.io/koysor/quant-finance/base:latest` |
 | Quant Finance | `docker pull ghcr.io/koysor/quant-finance/quant-finance:latest` |
 | Options | `docker pull ghcr.io/koysor/quant-finance/options:latest` |
 | Fixed Income | `docker pull ghcr.io/koysor/quant-finance/fixed-income:latest` |
@@ -214,20 +228,24 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 ├─────────────────────────────────────────────────────────────────────────┤
 │  1. Code Quality      Black formatting + Ruff linting                    │
 │         ↓                                                                │
-│  2. Build & Push      Build 4 Docker images in parallel                  │
+│  2. Build Base        Build shared base image (Python deps + src/)       │
+│     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/base         │
+│         ↓                                                                │
+│  3. Build & Push      Build 4 thin app images in parallel                │
 │     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/*            │
 │         ↓                                                                │
-│  3. Deploy            SSH to EC2, pull images + Caddy from GHCR          │
+│  4. Deploy            SSH to EC2, pull base + app images + Caddy         │
 │     (EC2)             docker-compose -f docker-compose.prod.yml up       │
 │         ↓                                                                │
-│  4. Health Check      Verify all apps + Caddy are responding             │
+│  5. Health Check      Verify all apps + Caddy are responding             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 1. **Code quality checks** - Black and Ruff run on GitHub runners
-2. **Build and push** - Four Docker images built in parallel on GitHub runners, pushed to GHCR
-3. **Deploy to EC2** - SSH into EC2, pull pre-built images + Caddy from registries (no building on EC2)
-4. **Health checks** - Verify all Streamlit apps and Caddy reverse proxy are responding
+2. **Build base image** - Shared base image with Python deps and `src/` modules, pushed to GHCR
+3. **Build and push** - Four thin app Docker images built in parallel on GitHub runners, pushed to GHCR
+4. **Deploy to EC2** - SSH into EC2, pull base image first (app images share its layers), then app images + Caddy
+5. **Health checks** - Verify all Streamlit apps and Caddy reverse proxy are responding
 
 ### Production vs Local Docker Compose
 
@@ -309,8 +327,8 @@ docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f h
 
 ### Check Caddy status
 ```bash
-docker logs docker-caddy-1           # view Caddy logs
-docker logs -f docker-caddy-1        # follow Caddy logs
+docker logs quant-finance-caddy-1           # view Caddy logs
+docker logs -f quant-finance-caddy-1        # follow Caddy logs
 curl -sf -o /dev/null http://localhost:80 && echo "Caddy OK"
 ```
 

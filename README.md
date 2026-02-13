@@ -39,12 +39,13 @@ Beyond the interactive applications, the repository includes robust data ingesti
 
 This project features several Streamlit applications, providing interactive access to various quantitative finance tools.
 
-* **AWS EC2 Deployments:** For more specialised applications, the following are deployed on an AWS EC2 instance.
+* **AWS EC2 Deployments:** The following applications are deployed on an AWS EC2 instance with HTTPS via Caddy reverse proxy.
 
-  * **Quant Finance:** http://koysor.duckdns.org/quant/
-  * **Options:** http://koysor.duckdns.org/options/
-  * **Fixed Income:** http://koysor.duckdns.org/fixed-income/
-  * **Portfolio Management:** http://koysor.duckdns.org/portfolio/
+  * **Quant Finance:** https://koysor.duckdns.org/
+  * **Options:** https://koysor.duckdns.org/options/
+  * **Fixed Income:** https://koysor.duckdns.org/fixed-income/
+  * **Portfolio Management:** https://koysor.duckdns.org/portfolio/
+  * **Maths Python:** https://koysor.duckdns.org/maths/
 
 ## App Availability Monitoring
 
