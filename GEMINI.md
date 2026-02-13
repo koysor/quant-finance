@@ -21,6 +21,12 @@ The core of the project includes a sophisticated data ingestion module that fetc
 
     # To run the options app
     ./launch_options_streamlit_app.sh
+
+    # To run the fixed income app
+    ./launch_fixed_income_streamlit_app.sh
+
+    # To run the portfolio management app
+    ./launch_portfolio_management_streamlit_app.sh
     ```
 
 ### Docker
@@ -41,5 +47,5 @@ The applications will be available at the following ports:
 
 *   **Code Style:** This project uses `black` for code formatting and `ruff` for linting. These are enforced via pre-commit hooks.
 *   **Testing:** There are currently no tests in the `tests/` directory. This is an area for future improvement.
-*   **CI/CD:** A GitHub Actions workflow (`.github/workflows/code-quality.yml`) automatically checks for code quality on every push and pull request to the `main` branch.
+*   **CI/CD:** A GitHub Actions workflow (`.github/workflows/code-quality.yml`) automatically checks for code quality on every push and pull request to the `main` branch. Additionally, `.github/workflows/tests.yml` runs unit tests.
 *   **Dependencies:** Project dependencies are managed in the `pyproject.toml` file.

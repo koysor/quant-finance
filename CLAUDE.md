@@ -50,9 +50,13 @@ source .venv/bin/activate && uv run streamlit run app_quant_finance/quantitative
 source .venv/bin/activate && uv run streamlit run app_options/options.py
 
 # Fixed Income Streamlit app
+./launch_fixed_income_streamlit_app.sh
+# or manually:
 source .venv/bin/activate && uv run streamlit run app_fixed_income/fixed_income.py
 
 # Portfolio Management Streamlit app
+./launch_portfolio_management_streamlit_app.sh
+# or manually:
 source .venv/bin/activate && uv run streamlit run app_portfolio_management/portfolio_management.py
 ```
 
@@ -75,7 +79,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 - Workflow validates black formatting and ruff linting
 
 ### Environment
-- Python 3.10+ required (see `.python-version`)
+- Python 3.13 required (see `.python-version`)
 - Virtual environment in `.venv/`
 - Dependencies managed via `pyproject.toml` with uv lock file
 

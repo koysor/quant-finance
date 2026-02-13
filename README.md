@@ -71,9 +71,9 @@ This project uses [pre-commit](https://pre-commit.com/) to enforce code quality 
 
 | Hook | Version | Purpose |
 |------|---------|---------|
-| **Black** | 25.1.0 | Code formatting - ensures consistent Python style |
-| **Ruff** | 0.9.6 | Linting with auto-fix - catches errors and style issues |
-| **Ruff Format** | 0.9.6 | Additional formatting checks |
+| **Black** | 26.1.0 | Code formatting - ensures consistent Python style |
+| **Ruff** | 0.14.14 | Linting with auto-fix - catches errors and style issues |
+| **Ruff Format** | 0.14.14 | Additional formatting checks |
 
 ### Installation
 

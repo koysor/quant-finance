@@ -203,7 +203,7 @@ Pre-commit hooks run locally on commit:
 
 ## Important Notes
 
-- **No tests currently exist** for most modules (see `tests/` - only option payoffs tested). Adding tests is encouraged for new features.
+- **Limited Test Coverage:** While a testing framework is in place (using `pytest`, as seen in `tests/` and `.github/workflows/tests.yml`), test coverage is currently limited to option payoffs. Adding tests is strongly encouraged for new features and existing modules.
 - **Docker images** exclude dev dependencies; only runtime packages are installed
 - **Data caching** is critical for performance; always check `src/data_ingestion/` before adding new data fetching logic
 - **Streamlit state management** can be tricky; use `st.session_state` carefully and document non-obvious state dependencies
