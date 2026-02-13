@@ -36,6 +36,9 @@ services:
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=quant
+      - MALLOC_ARENA_MAX=2
+      - PYTHONOPTIMIZE=1
+      - PYTHONDONTWRITEBYTECODE=1
 
   options:
     image: ghcr.io/koysor/quant-finance/options:latest
@@ -47,6 +50,9 @@ services:
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=options
+      - MALLOC_ARENA_MAX=2
+      - PYTHONOPTIMIZE=1
+      - PYTHONDONTWRITEBYTECODE=1
 
   fixed-income:
     image: ghcr.io/koysor/quant-finance/fixed-income:latest
@@ -58,6 +64,9 @@ services:
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=fixed-income
+      - MALLOC_ARENA_MAX=2
+      - PYTHONOPTIMIZE=1
+      - PYTHONDONTWRITEBYTECODE=1
 
   portfolio-management:
     image: ghcr.io/koysor/quant-finance/portfolio-management:latest
@@ -69,6 +78,9 @@ services:
     environment:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_SERVER_BASE_URL_PATH=portfolio
+      - MALLOC_ARENA_MAX=2
+      - PYTHONOPTIMIZE=1
+      - PYTHONDONTWRITEBYTECODE=1
 
 volumes:
   caddy_data:

@@ -1,0 +1,11 @@
+[server]
+headless = true
+folderWatch = false
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = false
