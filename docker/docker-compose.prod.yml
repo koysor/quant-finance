@@ -2,6 +2,8 @@
 # Uses pre-built images from GitHub Container Registry (GHCR)
 # Caddy reverse proxy provides automatic HTTPS via Let's Encrypt
 
+name: quant-finance
+
 services:
   caddy:
     image: caddy:2-alpine

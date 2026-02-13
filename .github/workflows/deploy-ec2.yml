@@ -112,9 +112,10 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
-            # Stop existing containers first
+            # Stop existing containers (both named project and legacy 'docker' project)
             cd docker
             docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+            docker-compose -p docker -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
             docker-compose down --remove-orphans 2>/dev/null || true
             cd ..
 
@@ -166,7 +167,7 @@ jobs:
             for service in $SERVICES; do
               if ! docker ps | grep -q "$service"; then
                 echo "Container $service is not running!"
-                docker logs docker-${service}-1 2>/dev/null || docker logs ${service} 2>/dev/null || true
+                docker logs quant-finance-${service}-1 2>/dev/null || docker logs ${service} 2>/dev/null || true
                 exit 1
               fi
             done

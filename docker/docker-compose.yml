@@ -1,6 +1,8 @@
 # Docker Compose for local development and testing
 # Run all four Streamlit applications on different ports
 
+name: quant-finance
+
 services:
   quant-finance:
     image: quant-finance
