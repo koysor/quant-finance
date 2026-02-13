@@ -184,7 +184,7 @@ st.pyplot(fig)
 
 ### Data Ingestion Pattern
 - Cache data fetches with DuckDB to avoid redundant API calls
-- Use `yfinance` for historical/current market data
+- Use `yfinance` for market data
 - Handle rate limiting with exponential backoff
 - Return pandas DataFrames for consistency with downstream processing
 

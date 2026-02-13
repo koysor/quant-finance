@@ -156,7 +156,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 - Pages are educational-focused, combining theory with practical Python implementations
 - Mathematical concepts are explained with both LaTeX formulations and code examples
 
-## Language and Spelling
+<h2>Language and Spelling</h2>
 
 **Always use British English spelling** in all code, comments, docstrings, and documentation. Common examples:
 
