@@ -346,10 +346,12 @@ cd ~/quant-finance
 git pull
 docker volume create caddy_data 2>/dev/null || true
 cd docker
+docker pull ghcr.io/koysor/quant-finance/base:latest
 docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
 docker pull ghcr.io/koysor/quant-finance/options:latest
 docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
 docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+docker pull ghcr.io/koysor/maths-python/maths-python:latest
 docker pull caddy:2-alpine
 docker-compose -f docker-compose.prod.yml up -d
 ```

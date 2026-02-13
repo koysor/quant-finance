@@ -38,7 +38,7 @@ Internet (HTTPS :443)
         ├──► options:8501            /options/
         ├──► fixed-income:8501       /fixed-income/
         ├──► portfolio-management:8501  /portfolio/
-        └──► host.docker.internal:8505  /maths/ (separate repo)
+        └──► maths-python:8501       /maths/
 ```
 
 ### How It Works
@@ -156,6 +156,7 @@ docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
 docker pull ghcr.io/koysor/quant-finance/options:latest
 docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
 docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+docker pull ghcr.io/koysor/maths-python/maths-python:latest
 docker pull caddy:2-alpine
 docker-compose -f docker-compose.prod.yml up -d
 ```
