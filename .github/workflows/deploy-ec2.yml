@@ -138,8 +138,16 @@ jobs:
             docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
             docker pull caddy:2-alpine
 
+            # Pull maths-python image (prune -af removes it since it runs outside this compose project)
+            docker pull ghcr.io/koysor/maths-python:latest
+
             # Start services with new images
             cd docker
+            docker-compose -f docker-compose.prod.yml up -d
+
+            # Restart maths-python (separate compose project, destroyed by prune -af)
+            cd ~/maths-python 2>/dev/null && git fetch origin && git reset --hard origin/main || git clone https://github.com/koysor/maths-python.git ~/maths-python
+            cd ~/maths-python/docker
             docker-compose -f docker-compose.prod.yml up -d
 
       - name: Health check
@@ -169,6 +177,10 @@ jobs:
             docker-compose -f docker-compose.prod.yml exec -T options curl -f http://localhost:8501/_stcore/health && echo " Options OK"
             docker-compose -f docker-compose.prod.yml exec -T fixed-income curl -f http://localhost:8501/_stcore/health && echo " Fixed Income OK"
             docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f http://localhost:8501/_stcore/health && echo " Portfolio OK"
+
+            # Check maths-python health endpoint
+            cd ~/maths-python/docker
+            docker-compose -f docker-compose.prod.yml exec -T maths-python curl -f http://localhost:8501/maths/_stcore/health && echo " Maths Python OK"
 
             # Check Caddy is responding on port 80
             curl -sf -o /dev/null http://localhost:80 && echo " Caddy HTTP OK"
