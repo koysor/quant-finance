@@ -2,8 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### Volatility Spreads")
+st.set_page_config(page_title="Volatility Spreads", page_icon="📈", layout="wide")
+st.header("Volatility Spreads")
 
 strategy = st.selectbox(
     "Volatility Spreads",
@@ -22,7 +22,7 @@ strategy = st.selectbox(
     help="Select a volatility spread strategy to visualise.",
 )
 
-st.markdown("---")
+st.divider()
 
 # Common parameters
 col1, col2 = st.columns(2)

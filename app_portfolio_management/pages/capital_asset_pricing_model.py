@@ -2,8 +2,10 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### Capital Asset Pricing Model (CAPM)")
+st.set_page_config(
+    page_title="Capital Asset Pricing Model (CAPM)", page_icon="💼", layout="wide"
+)
+st.header("Capital Asset Pricing Model (CAPM)")
 
 st.write(
     "The Capital Asset Pricing Model, developed by William Sharpe (1964), John Lintner (1965), "
@@ -358,3 +360,11 @@ st.write("""
 - **Asset allocation**: Understanding beta helps construct portfolios with desired risk profiles
 - **Security selection**: Identify potentially mispriced securities above/below the SML
 """)
+
+st.caption(
+    "Sharpe, W.F. (1964). 'Capital Asset Prices: A Theory of Market Equilibrium Under "
+    "Conditions of Risk.' The Journal of Finance, 19(3), 425–442. | "
+    "Lintner, J. (1965). 'The Valuation of Risk Assets and the Selection of Risky "
+    "Investments in Stock Portfolios and Capital Budgets.' "
+    "The Review of Economics and Statistics, 47(1), 13–37."
+)

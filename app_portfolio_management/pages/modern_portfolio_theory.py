@@ -2,8 +2,12 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### Modern Portfolio Theory - Efficient Frontier")
+st.set_page_config(
+    page_title="Modern Portfolio Theory - Efficient Frontier",
+    page_icon="💼",
+    layout="wide",
+)
+st.header("Modern Portfolio Theory - Efficient Frontier")
 
 st.write(
     "Modern Portfolio Theory (MPT), developed by Harry Markowitz in 1952, demonstrates how "
@@ -296,3 +300,7 @@ st.write("""
 - Even modest correlation reductions can significantly improve portfolio efficiency
 - The minimum variance portfolio is not necessarily optimal; it depends on risk tolerance
 """)
+
+st.caption(
+    "Markowitz, H. (1952). 'Portfolio Selection.' The Journal of Finance, 7(1), 77–91."
+)

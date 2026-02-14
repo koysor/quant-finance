@@ -1,7 +1,7 @@
 import streamlit as st
 
-st.set_page_config(layout="wide")
-st.markdown("### Black-Scholes Model")
+st.set_page_config(page_title="Black-Scholes Model", page_icon="📊", layout="wide")
+st.header("Black-Scholes Model")
 
 
 st.write(
@@ -72,4 +72,11 @@ st.write(
 st.write(
     "The four terms sum to zero in the Black-Scholes equation, reflecting a fair, no-arbitrage price "
     "for the option given the underlying assumptions."
+)
+
+st.caption(
+    "Black, F. & Scholes, M. (1973). 'The Pricing of Options and Corporate Liabilities.' "
+    "Journal of Political Economy, 81(3), 637–654. | "
+    "Merton, R.C. (1973). 'Theory of Rational Option Pricing.' "
+    "Bell Journal of Economics and Management Science, 4(1), 141–183."
 )

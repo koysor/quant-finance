@@ -3,8 +3,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from typing import Tuple, Union
 
-st.set_page_config(layout="wide")
-st.markdown("### The Binomial Model for Option Pricing")
+st.set_page_config(
+    page_title="The Binomial Model for Option Pricing", page_icon="📈", layout="wide"
+)
+st.header("The Binomial Model for Option Pricing")
 
 
 st.info(
@@ -83,7 +85,7 @@ def draw_one_step_binomial_tree(
     plt.close(fig)
 
 
-st.markdown("### Worked Example on a European Call Option")
+st.subheader("Worked Example on a European Call Option")
 
 st.write(
     "If we imagine a simple scenario where the underlying stock price on a Call Option can can only have "
@@ -172,7 +174,7 @@ latex_code = rf"""{payoff_down} - \Delta * {price_down}"""
 st.latex(latex_code)
 
 
-st.markdown("### Delta Neutral Hedging")
+st.subheader("Delta Neutral Hedging")
 
 st.write(
     "In order to hedge the option, we need to create a portfolio that is delta neutral. "
@@ -235,3 +237,8 @@ with st.expander("Binomial Model Assumptions"):
         "8. The model assumes that the option price is a function of the underlying asset price, "
         "the strike price, the time to expiration, and the risk-free rate."
     )
+
+st.caption(
+    "Cox, J.C., Ross, S.A. & Rubinstein, M. (1979). 'Option Pricing: A Simplified Approach.' "
+    "Journal of Financial Economics, 7(3), 229–263."
+)

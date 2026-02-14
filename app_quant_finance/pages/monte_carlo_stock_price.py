@@ -2,8 +2,12 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### Monte Carlo Simulation - Stock Price Random Walk")
+st.set_page_config(
+    page_title="Monte Carlo Simulation - Stock Price Random Walk",
+    page_icon="📊",
+    layout="wide",
+)
+st.header("Monte Carlo Simulation - Stock Price Random Walk")
 
 st.write(
     "Monte Carlo simulation uses random sampling to model the probability of different outcomes in financial markets. "
@@ -209,3 +213,8 @@ st.write("""
 - **Portfolio Optimization:** Compare risk-return profiles of different assets
 - **Option Pricing:** Foundation for more complex derivatives pricing models
 """)
+
+st.caption(
+    "Boyle, P.P. (1977). 'Options: A Monte Carlo Approach.' "
+    "Journal of Financial Economics, 4(3), 323–338."
+)

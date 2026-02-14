@@ -1,7 +1,7 @@
 import streamlit as st
 
-st.set_page_config(layout="wide")
-st.markdown("### Wiener Process")
+st.set_page_config(page_title="Wiener Process", page_icon="📊", layout="wide")
+st.header("Wiener Process")
 
 
 st.write(
@@ -42,4 +42,9 @@ st.write(
 )
 st.write(
     "$$dW(t)$$ is the increment of the Wiener process, representing the random shock to the asset price."
+)
+
+st.caption(
+    "Wiener, N. (1923). 'Differential Space.' "
+    "Journal of Mathematics and Physics, 2(1–4), 131–174."
 )

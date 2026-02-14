@@ -2,8 +2,8 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### The Binomial Tree")
+st.set_page_config(page_title="The Binomial Tree", page_icon="📊", layout="wide")
+st.header("The Binomial Tree")
 
 
 def binomial_tree(n: int, p: float) -> nx.DiGraph:

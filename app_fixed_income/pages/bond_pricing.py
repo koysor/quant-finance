@@ -1,4 +1,4 @@
 import streamlit as st
 
-st.set_page_config(layout="wide")
-st.markdown("### Bond Pricing Concepts")
+st.set_page_config(page_title="Bond Pricing Concepts", page_icon="🏦", layout="wide")
+st.header("Bond Pricing Concepts")

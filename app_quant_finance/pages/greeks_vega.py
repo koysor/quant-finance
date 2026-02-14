@@ -1,7 +1,7 @@
 import streamlit as st
 
-st.set_page_config(layout="wide")
-st.markdown("### The Greeks - Vega")
+st.set_page_config(page_title="The Greeks - Vega", page_icon="📊", layout="wide")
+st.header("The Greeks - Vega")
 
 
 st.markdown("#### Vega")

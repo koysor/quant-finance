@@ -2,8 +2,12 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.markdown("### Portfolio Variance and the Covariance Matrix")
+st.set_page_config(
+    page_title="Portfolio Variance and the Covariance Matrix",
+    page_icon="💼",
+    layout="wide",
+)
+st.header("Portfolio Variance and the Covariance Matrix")
 
 st.write(
     "Linear algebra provides an elegant and computationally efficient way to calculate "

@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 
-st.set_page_config(layout="wide")
-st.markdown("### Put-Call Parity")
+st.set_page_config(page_title="Put-Call Parity", page_icon="📈", layout="wide")
+st.header("Put-Call Parity")
 
 st.write(
     "Put-Call Parity is a fundamental principle in options pricing that establishes "
@@ -89,7 +89,7 @@ st.write(
 # Section 2 – Component Breakdown at Expiration
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Portfolio Components at Expiration")
 
 st.write(
@@ -217,7 +217,7 @@ The purple and teal lines overlap perfectly, confirming the parity relationship.
 # Section 3 – Arbitrage Detection Calculator
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Arbitrage Detection Calculator")
 
 st.write(
@@ -353,7 +353,7 @@ an arbitrage opportunity may exist (subject to transaction costs).
 # Section 4 – Synthetic Positions
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Synthetic Positions")
 
 st.write(
@@ -458,7 +458,7 @@ with col_synth2:
 # Section 5 – Pre-Expiration Value Plot
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Pre-Expiration Portfolio Values")
 
 st.write(
@@ -617,7 +617,7 @@ put-call parity holds continuously throughout the option's life.
 # Section 6 – Assumptions and Limitations
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 
 with st.expander("Assumptions and Limitations"):
     st.markdown("""
@@ -655,7 +655,7 @@ Put-Call Parity holds under the following conditions:
 # Section 7 – Dividend-Adjusted Parity
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Dividend-Adjusted Put-Call Parity")
 
 st.write(
@@ -760,7 +760,7 @@ st.write(
 # Section 8 – Key Takeaways
 # ---------------------------------------------------------------------------
 
-st.markdown("---")
+st.divider()
 st.markdown("#### Key Takeaways")
 
 col_take1, col_take2 = st.columns(2)
@@ -788,4 +788,9 @@ st.info(
     "arbitrage by market makers. When deviations do occur they are typically small and "
     "fall within transaction cost bounds. Market makers continuously monitor parity to "
     "ensure consistent pricing across options markets."
+)
+
+st.caption(
+    "Stoll, H.R. (1969). 'The Relationship Between Put and Call Option Prices.' "
+    "The Journal of Finance, 24(5), 801–824."
 )

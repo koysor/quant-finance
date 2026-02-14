@@ -1,6 +1,5 @@
 [server]
 headless = true
-folderWatch = false
 enableCORS = false
 enableXsrfProtection = false
 
