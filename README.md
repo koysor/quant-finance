@@ -41,17 +41,17 @@ This project features several Streamlit applications, providing interactive acce
 
 * **AWS EC2 Deployments:** The following applications are deployed on an AWS EC2 instance with HTTPS via Caddy reverse proxy.
 
-  * **Quant Finance:** https://koysor.duckdns.org/
-  * **Options:** https://koysor.duckdns.org/options/
-  * **Fixed Income:** https://koysor.duckdns.org/fixed-income/
-  * **Portfolio Management:** https://koysor.duckdns.org/portfolio/
-  * **Maths Python:** https://koysor.duckdns.org/maths/
+  * **Quant Finance:** [https://koysor.duckdns.org/quant/](https://koysor.duckdns.org/quant/)
+  * **Options:** [https://koysor.duckdns.org/options/](https://koysor.duckdns.org/options/)
+  * **Fixed Income:** [https://koysor.duckdns.org/fixed-income/](https://koysor.duckdns.org/fixed-income/)
+  * **Portfolio Management:** [https://koysor.duckdns.org/portfolio/](https://koysor.duckdns.org/portfolio/)
+  * **Maths Python:** [https://koysor.duckdns.org/maths/](https://koysor.duckdns.org/maths/)
 
 ## App Availability Monitoring
 
 Uptime and availability for all live Streamlit applications is tracked via UptimeRobot. View the current status and historical uptime at:
 
-**[Status Page](https://stats.uptimerobot.com/75Jq7PxIkL)**
+**Status Page:** [https://stats.uptimerobot.com/75Jq7PxIkL](https://stats.uptimerobot.com/75Jq7PxIkL)
 
 ## Interactive Marimo Notebooks
 
@@ -72,6 +72,7 @@ This project uses [pre-commit](https://pre-commit.com/) to enforce code quality 
 
 | Hook | Version | Purpose |
 |------|---------|---------|
+| **detect-secrets** | 1.5.0 | Prevents secrets from being committed to the repository |
 | **Black** | 26.1.0 | Code formatting - ensures consistent Python style |
 | **Ruff** | 0.14.14 | Linting with auto-fix - catches errors and style issues |
 | **Ruff Format** | 0.14.14 | Additional formatting checks |

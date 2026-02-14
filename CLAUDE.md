@@ -21,7 +21,7 @@ The codebase follows a modular structure:
 
 - **`app_options/`** - Streamlit app focused on options
   - `options.py` - Main entry point
-  - `pages/` - Options-specific pages (binomial model, pricing, payoffs, etc.)
+  - `pages/` - Options-specific pages (binomial model, option payoffs, put-call parity, volatility spreads)
 
 - **`app_fixed_income/`** - Streamlit app for fixed income and bonds
   - `fixed_income.py` - Main entry point
@@ -74,9 +74,12 @@ pre-commit run --all-files  # Run hooks manually on all files
 ```
 
 ### CI/CD
-- **GitHub Actions** - Automated code quality checks on push/PR
-- **Pre-commit hooks** - Local code quality enforcement
-- Workflow validates black formatting and ruff linting
+- **GitHub Actions** workflows:
+  - `code-quality.yml` - Validates black formatting and ruff linting on push/PR
+  - `tests.yml` - Runs pytest on push/PR
+  - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
+  - `deploy-marimo.yml` - Exports marimo notebooks to WASM and deploys to GitHub Pages
+- **Pre-commit hooks** - Local code quality enforcement (detect-secrets, black, ruff)
 
 ### Environment
 - Python 3.13 required (see `.python-version`)
@@ -109,9 +112,6 @@ pre-commit run --all-files  # Run hooks manually on all files
   - In-process OLAP database for efficient data queries
   - SQL interface for financial data analysis
   - Columnar storage optimised for analytical workloads
-
-- **sqlglot** - SQL parsing and transformation
-  - SQL dialect translation and query manipulation
 
 ### Market Data
 
