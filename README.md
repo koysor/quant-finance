@@ -35,6 +35,19 @@ Beyond the interactive applications, the repository includes robust data ingesti
 | **Black / Ruff** | Code formatting and linting |
 | **pre-commit** | Git hooks for automated code quality checks |
 
+### CLI Tools
+
+| Tool | Purpose |
+|------|---------|
+| **[lazygit](https://github.com/jesseduffield/lazygit)** | Terminal UI for git commands — interactive staging, committing, branching, and more |
+| **[eza](https://github.com/eza-community/eza)** | Modern replacement for `ls` with colour-coded output, git integration, and tree view |
+| **[zoxide](https://github.com/ajeetdsouza/zoxide)** | Smarter `cd` command — learns your most-used directories for quick fuzzy navigation |
+| **[fzf](https://github.com/junegunn/fzf)** | General-purpose fuzzy finder — supercharges history search, file finding, and interactive selection |
+| **[ripgrep](https://github.com/BurntSushi/ripgrep)** | Blazing fast recursive code search — respects `.gitignore`, vastly faster than `grep` |
+| **[bat](https://github.com/sharkdp/bat)** | `cat` with syntax highlighting, line numbers, and git diff integration |
+| **[delta](https://github.com/dandavison/delta)** | Better git diffs — syntax highlighting, side-by-side view, and line numbers |
+| **[fd](https://github.com/sharkdp/fd)** | Simple, fast alternative to `find` — intuitive syntax, respects `.gitignore`, colour output |
+
 ## Live Streamlit Applications
 
 This project features several Streamlit applications, providing interactive access to various quantitative finance tools.
