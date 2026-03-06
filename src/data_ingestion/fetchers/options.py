@@ -81,6 +81,8 @@ class OptionsFetcher(BaseFetcher):
             column_mapping = {
                 "strike": "Strike",
                 "lastPrice": "Last",
+                "bid": "Bid",
+                "ask": "Ask",
                 "volume": "Volume",
                 "openInterest": "OpenInterest",
                 "impliedVolatility": "ImpliedVolatility",
