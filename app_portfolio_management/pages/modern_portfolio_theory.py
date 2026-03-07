@@ -282,7 +282,7 @@ else:
     )
 
 
-st.markdown("#### Key Insights")
+st.markdown("#### Summary")
 
 st.write("""
 **Understanding the Efficient Frontier:**

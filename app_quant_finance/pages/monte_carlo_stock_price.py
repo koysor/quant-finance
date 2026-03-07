@@ -198,7 +198,7 @@ if st.button("Run Monte Carlo Simulation"):
         st.metric("Value at Risk (99%)", f"£{var_99:.2f}")
         st.metric("Expected Return", f"{np.mean(returns) * 100:.2f}%")
 
-st.markdown("#### Key Insights")
+st.markdown("#### Summary")
 
 st.write("""
 **Monte Carlo Simulation Properties:**

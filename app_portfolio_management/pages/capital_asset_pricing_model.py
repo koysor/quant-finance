@@ -345,7 +345,7 @@ by adding size and value factors.**
 """)
 
 
-st.markdown("#### Key Insights")
+st.markdown("#### Summary")
 
 st.write("""
 **Understanding the Security Market Line:**

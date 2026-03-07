@@ -397,7 +397,7 @@ with st.expander("Show detailed calculation", expanded=False):
     st.write(f"**Total: {verification_total:.6f}** ✓")
 
 
-st.markdown("#### Key Insights")
+st.markdown("#### Summary")
 
 st.write("""
 **Why matrix notation matters:**
