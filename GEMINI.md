@@ -50,6 +50,6 @@ The applications will be available at the following ports:
     *   **Variable Isolation:** Avoid redefining variables like `df`, `sym`, `data`, `fig`, `ax` in different cells.
     *   **Loop Variables:** Prefix loop and temporary variables with underscores (e.g., `for _sym, _df in multi_data.items():`) to make them local to the cell and prevent conflicts.
     *   **Reactive Flow:** Ensure all required global variables are passed as arguments to the cell functions.
-*   **Testing:** There are currently no tests in the `tests/` directory. This is an area for future improvement.
+*   **Testing:** Unit tests are in the `tests/` directory. Run them with `uv run pytest tests/ -v --tb=short`. The `tests/test_option_payoffs.py` module provides coverage for option payoff calculations.
 *   **CI/CD:** A GitHub Actions workflow (`.github/workflows/code-quality.yml`) automatically checks for code quality on every push and pull request to the `main` branch. Additionally, `.github/workflows/tests.yml` runs unit tests.
 *   **Dependencies:** Project dependencies are managed in the `pyproject.toml` file.

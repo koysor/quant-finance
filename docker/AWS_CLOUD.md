@@ -15,7 +15,7 @@ The primary AWS service used is EC2 for hosting Docker containers running the St
 | Configuration    | Value                            |
 | ---------------- | -------------------------------- |
 | Instance Type    | t2.micro (free tier eligible)    |
-| Operating System | Amazon Linux 2                   |
+| Operating System | Amazon Linux 2023                |
 | Public IP        | 13.50.72.89                      |
 | Domain           | koysor.duckdns.org (via DuckDNS) |
 
@@ -53,7 +53,7 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 │  │                    Docker Compose (prod)                         │    │
 │  │  ┌─────────┐                                                     │    │
 │  │  │  Caddy   │ :80/:443 (HTTPS + Let's Encrypt)                   │    │
-│  │  │  (proxy) │──┬─► quant-finance:8501      /                     │    │
+│  │  │  (proxy) │──┬─► quant-finance:8501      /quant/               │    │
 │  │  │          │  ├─► options:8501            /options/              │    │
 │  │  │          │  ├─► fixed-income:8501       /fixed-income/        │    │
 │  │  │          │  ├─► portfolio-mgmt:8501     /portfolio/           │    │
@@ -70,7 +70,7 @@ An Elastic IP is used to maintain a static public IP address, preventing IP chan
 
 | Application          | URL                                      |
 | -------------------- | ---------------------------------------- |
-| Quantitative Finance | https://koysor.duckdns.org/              |
+| Quantitative Finance | https://koysor.duckdns.org/quant/        |
 | Options              | https://koysor.duckdns.org/options/      |
 | Fixed Income         | https://koysor.duckdns.org/fixed-income/ |
 | Portfolio Management | https://koysor.duckdns.org/portfolio/    |

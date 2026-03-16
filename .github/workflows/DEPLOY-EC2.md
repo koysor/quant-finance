@@ -7,7 +7,7 @@ This document explains the `deploy-ec2.yml` GitHub Actions workflow.
 The workflow automates the deployment of four Streamlit applications to an AWS EC2 instance. It follows a CI/CD pipeline pattern:
 
 ```
-Code Push → Code Quality → Build Images → Push to GHCR → Deploy to EC2 → Health Check
+Code Push → Code Quality → Build Base → Build App Images → Push to GHCR → Deploy to EC2 → Health Check
 ```
 
 **Key design decisions:**
@@ -77,11 +77,25 @@ ruff check .
 
 **Best practice:** Code quality checks are the first job because they're fast (~10 seconds) and catch issues early. No point building Docker images if the code has linting errors.
 
-## Job 2: Build and Push
+## Job 2: Build Base
+
+```yaml
+build-base:
+  needs: code-quality
+  runs-on: ubuntu-latest
+```
+
+This job builds the shared base Docker image containing all Python dependencies and the `src/` package. App images built in Job 3 extend this base, so they only add their thin application layer.
+
+**Why a separate base job:** The base image (with heavy deps like NumPy, SciPy, Pandas) takes ~3 minutes to build. Building it once and caching it means the four parallel app builds in Job 3 each take ~30 seconds instead of ~5 minutes.
+
+The base image is pushed to `ghcr.io/koysor/quant-finance/base:latest`.
+
+## Job 3: Build and Push
 
 ```yaml
 build-and-push:
-  needs: code-quality
+  needs: [code-quality, build-base]
   runs-on: ubuntu-latest
   permissions:
     contents: read
@@ -91,10 +105,10 @@ build-and-push:
 ### Job Dependencies
 
 ```yaml
-needs: code-quality
+needs: [code-quality, build-base]
 ```
 
-**Why:** Only runs after code quality passes. This prevents wasting compute resources building images for code that fails linting.
+**Why:** Only runs after both code quality passes and the base image is built. This ensures the app images have a valid base to extend, and prevents wasting compute resources on linting failures.
 
 ### Permissions
 
@@ -215,7 +229,7 @@ cache-to: type=gha,mode=max
 
 Docker layer caching dramatically speeds up builds. If only application code changed (not dependencies), cached layers for pip installs are reused. A full build might take 5 minutes; a cached build takes 30 seconds.
 
-## Job 3: Deploy
+## Job 4: Deploy
 
 ```yaml
 deploy:
@@ -347,7 +361,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Health Check
 
 ```bash
-sleep 30
+sleep 45
 
 SERVICES="quant-finance options fixed-income portfolio-management"
 for service in $SERVICES; do
@@ -373,7 +387,7 @@ curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
 |-----------|---------|
 | `-f` | Fail silently on HTTP errors (exit code 22 on 4xx/5xx) |
 
-**Why `sleep 30`:** Streamlit apps take time to initialise. Checking immediately would fail even for successful deployments.
+**Why `sleep 45`:** Streamlit apps take time to initialise. Checking immediately would fail even for successful deployments.
 
 **Best practice:** Always include health checks in deployment pipelines. A deployment that "succeeds" but leaves apps broken is worse than a failed deployment—at least failures are visible.
 
@@ -394,9 +408,15 @@ curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌──────────────────┐                                                        │
-│  │  code-quality    │  Black + Ruff                                          │
+│  │  code-quality    │  Black + Ruff check + Ruff format                      │
 │  │  (ubuntu-latest) │  ~10 seconds                                           │
 │  └────────┬─────────┘                                                        │
+│           │ needs                                                            │
+│           ▼                                                                  │
+│  ┌──────────────────┐                                                        │
+│  │  build-base      │  Build shared base image (Python deps + src/)          │
+│  │  (ubuntu-latest) │  Push to ghcr.io/koysor/quant-finance/base            │
+│  └────────┬─────────┘  ~3 minutes                                            │
 │           │ needs                                                            │
 │           ▼                                                                  │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │

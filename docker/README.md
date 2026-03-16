@@ -15,7 +15,7 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 
 | App | URL |
 |-----|-----|
-| Quant Finance | https://koysor.duckdns.org/ |
+| Quant Finance | https://koysor.duckdns.org/quant/ |
 | Options | https://koysor.duckdns.org/options/ |
 | Fixed Income | https://koysor.duckdns.org/fixed-income/ |
 | Portfolio Management | https://koysor.duckdns.org/portfolio/ |
@@ -34,7 +34,7 @@ Internet (HTTPS :443)
    │   Caddy   │  Automatic Let's Encrypt certificates
    │  (proxy)  │  HTTP → HTTPS redirect
    └────┬──────┘
-        ├──► quant-finance:8501      /
+        ├──► quant-finance:8501      /quant/
         ├──► options:8501            /options/
         ├──► fixed-income:8501       /fixed-income/
         ├──► portfolio-management:8501  /portfolio/
@@ -362,7 +362,7 @@ Wait 1-2 minutes, then access:
 
 | App | URL |
 |-----|-----|
-| Quant Finance | https://koysor.duckdns.org/ |
+| Quant Finance | https://koysor.duckdns.org/quant/ |
 | Options | https://koysor.duckdns.org/options/ |
 | Fixed Income | https://koysor.duckdns.org/fixed-income/ |
 | Portfolio Management | https://koysor.duckdns.org/portfolio/ |

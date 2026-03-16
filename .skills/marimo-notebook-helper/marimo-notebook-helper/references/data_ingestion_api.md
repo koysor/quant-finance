@@ -29,10 +29,10 @@ fetcher = OptionsFetcher()
 expirations = fetcher.get_available_expirations("AAPL")
 
 # Option chain
-calls, puts = fetcher.fetch_option_chain("AAPL", expiration="2025-01-17")
+calls, puts = fetcher.fetch_option_chain("AAPL", expiration="2026-06-19")
 
 # Greeks (with BSM)
-calls_with_greeks = fetcher.fetch_greeks("AAPL", expiration="2025-01-17", option_type="call")
+calls_with_greeks = fetcher.fetch_greeks("AAPL", expiration="2026-06-19", option_type="call")
 ```
 
 ## FixedIncomeFetcher
@@ -44,5 +44,5 @@ fetcher = FixedIncomeFetcher()
 yields_df = fetcher.fetch_treasury_yields(maturities=["2Y", "10Y"])
 
 # Yield curve (snapshot)
-curve = fetcher.fetch_yield_curve(date="2024-12-20")
+curve = fetcher.fetch_yield_curve(date="2026-03-14")
 ```

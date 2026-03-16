@@ -32,8 +32,10 @@ The codebase follows a modular structure:
   - `pages/` - MPT, CAPM, and alpha analysis pages
 
 - **`src/`** - Core Python modules and notebooks
-  - `notebooks/` - Python scripts for simulations and data analysis (GBM, distributions, yfinance)
-  - `options/`, `portfolio_management/`, `stochastic/`, `value_at_risk/` - Topic-specific modules
+  - `data_ingestion/` - Data fetching package with caching (DuckDB), rate limiting, and retry logic; provides `EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`
+  - `notebooks/` - Marimo notebook scripts for simulations and data analysis (GBM, distributions, yfinance)
+  - `options/` - Option payoff calculation utilities
+  - `portfolio_management/`, `stochastic/`, `value_at_risk/` - Placeholder directories for future modules
 
 ## Development Commands
 
@@ -68,7 +70,10 @@ black .
 # Lint code
 ruff check .
 
-# Pre-commit hooks (automatically runs black and ruff on commit)
+# Format check (matches CI)
+ruff format .
+
+# Pre-commit hooks (automatically runs black, ruff check, and ruff format on commit)
 pre-commit install        # Setup hooks (already done)
 pre-commit run --all-files  # Run hooks manually on all files
 ```
@@ -79,7 +84,7 @@ pre-commit run --all-files  # Run hooks manually on all files
   - `tests.yml` - Runs pytest on push/PR
   - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
   - `deploy-marimo.yml` - Exports marimo notebooks to WASM and deploys to GitHub Pages
-- **Pre-commit hooks** - Local code quality enforcement (detect-secrets, black, ruff)
+- **Pre-commit hooks** - Local code quality enforcement (detect-secrets, black, ruff check, ruff format)
 
 ### Environment
 - Python 3.13 required (see `.python-version`)
