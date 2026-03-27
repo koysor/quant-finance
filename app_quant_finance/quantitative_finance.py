@@ -5,10 +5,6 @@ st.set_page_config(
 )
 
 st.sidebar.title("📊 Quantitative Finance")
-st.sidebar.info(
-    "Explore stochastic processes, option Greeks, volatility modelling, "
-    "and risk management through interactive visualisations and worked examples."
-)
 
 st.header("Quantitative Finance Toolkit")
 

@@ -5,9 +5,5 @@ st.set_page_config(
 )
 
 st.sidebar.title("💼 Portfolio Management")
-st.sidebar.info(
-    "Study Modern Portfolio Theory, the Capital Asset Pricing Model, "
-    "and portfolio variance analysis with interactive efficient frontier plots."
-)
 
 st.header("Portfolio Management Toolkit")
