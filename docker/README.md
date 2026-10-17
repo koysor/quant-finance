@@ -102,9 +102,9 @@ docker run -d -p 8503:8501 --name fixed-income fixed-income-app
 docker run -d -p 8504:8501 --name portfolio portfolio-management-app
 ```
 
-## AWS EC2 Deployment (Free Tier)
+## AWS EC2 Deployment
 
-The apps are deployed on an AWS EC2 t2.micro instance (free tier eligible).
+The apps are deployed on an AWS EC2 t3.micro instance (2 vCPU burstable, 1 GiB RAM) in `eu-north-1` (Stockholm). The AWS account is on a paid plan; see [AWS_CLOUD.md](AWS_CLOUD.md) for details.
 
 ### Manual Deployment
 
@@ -179,13 +179,13 @@ Docker images are built on GitHub-hosted runners and published to [GitHub Contai
 
 ### Why Pre-Built Images?
 
-Building Docker images on the EC2 t2.micro instance has several drawbacks:
+Building Docker images on the EC2 t3.micro instance has several drawbacks:
 
-1. **Resource constraints** - The t2.micro has only 1GB RAM and limited CPU. Building images with large dependencies (NumPy, SciPy, Pandas) frequently causes out-of-memory errors and very slow builds.
+1. **Resource constraints** - The t3.micro has only 1GB RAM and limited CPU. Building images with large dependencies (NumPy, SciPy, Pandas) frequently causes out-of-memory errors and very slow builds.
 
-2. **Disk space** - Building images requires significant temporary disk space for layers and caches. The t2.micro's 8GB default storage fills up quickly, causing failed builds.
+2. **Disk space** - Building images requires significant temporary disk space for layers and caches. An EC2 instance's default 8GB root volume fills up quickly, causing failed builds.
 
-3. **Build time** - Builds that take seconds on a modern laptop can take 10+ minutes on t2.micro, during which the applications are unavailable.
+3. **Build time** - Builds that take seconds on a modern laptop can take 10+ minutes on t3.micro, during which the applications are unavailable.
 
 4. **Reliability** - Pre-built images are tested and verified before deployment. If an image fails to build on GitHub Actions, it won't be deployed, preventing broken deployments.
 
@@ -335,7 +335,7 @@ curl -sf -o /dev/null http://localhost:80 && echo "Caddy OK"
 
 ### Out of memory
 
-The t2.micro has 1GB RAM. If builds fail:
+The t3.micro has 1GB RAM. If builds fail:
 ```bash
 # Add swap space
 sudo dd if=/dev/zero of=/swapfile bs=128M count=16
@@ -409,9 +409,12 @@ If your EC2 IP changes (e.g., after reboot without Elastic IP):
 
 ## Cost
 
-| Resource | Monthly Cost |
-|----------|-------------|
-| EC2 t2.micro | **$0** (free tier, first 12 months) |
-| DuckDNS domain | **$0** (free) |
-| Let's Encrypt SSL | **$0** (free) |
-| After free tier | ~$8-10/month |
+The AWS free tier has ended; the account is on a paid plan and billed pay-as-you-go. Check actual spend in Billing and Cost Management → Cost Explorer.
+
+| Resource | Billing |
+|----------|---------|
+| EC2 t3.micro | Hourly while running |
+| EBS volume | Monthly, even while the instance is stopped |
+| Public IPv4 / Elastic IP | Hourly while allocated |
+| DuckDNS domain | Free |
+| Let's Encrypt SSL | Free |

@@ -116,7 +116,7 @@ sudo docker run -d -p 8501:8501 --name quant-finance --restart unless-stopped qu
 
 ### "Killed" during docker build
 
-**Cause:** Out of memory (t2.micro has only 1GB RAM).
+**Cause:** Out of memory (t3.micro has only 1GB RAM).
 
 **Fix:** Add swap space:
 ```bash
@@ -187,7 +187,7 @@ ssh-keygen -R 13.50.72.89
 2. Common issues:
    - `EC2_HOST` secret incorrect
    - `EC2_SSH_KEY` secret has wrong format
-   - EC2 instance stopped
+   - EC2 instance stopped. The log shows `dial tcp ***:22: i/o timeout` and nothing runs on the server. Start it in the EC2 console (region `eu-north-1`) → Instances → Instance state → Start instance, then re-run the failed deploy jobs. See [AWS_CLOUD.md](AWS_CLOUD.md#stopped-instance).
    - Security group blocking SSH (port 22)
 
 ---
@@ -256,7 +256,7 @@ sudo docker logs -f quant-finance
 ### App is slow
 
 **Causes:**
-- t2.micro has limited CPU/RAM
+- t3.micro has limited CPU/RAM
 - Multiple apps competing for resources
 
 **Fixes:**

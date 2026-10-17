@@ -11,7 +11,7 @@ Code Push → Code Quality → Build Base → Build App Images → Push to GHCR 
 ```
 
 **Key design decisions:**
-- Images are built on GitHub runners (not EC2) due to EC2 t2.micro resource constraints
+- Images are built on GitHub runners (not EC2) due to EC2 t3.micro resource constraints
 - Images are stored in GitHub Container Registry (GHCR) for reliable, fast deployments
 - Pull requests only build images (no deployment) to validate changes without affecting production
 - Health checks verify deployment success before marking the workflow complete
@@ -321,7 +321,7 @@ sudo rm -rf /tmp/* 2>/dev/null || true
 | `docker builder prune -af` | Remove build cache |
 | `rm -rf /tmp/*` | Clear temporary files |
 
-**Why this matters:** The t2.micro has only 8GB disk. Old images and build cache accumulate quickly. Without cleanup, deployments fail with "no space left on device".
+**Why this matters:** EC2's default root volume is only 8GB. Old images and build cache accumulate quickly. Without cleanup, deployments fail with "no space left on device".
 
 | Flag | Meaning |
 |------|---------|
