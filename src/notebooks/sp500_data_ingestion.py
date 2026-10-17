@@ -224,6 +224,7 @@ def _(df_sp500, fetch_button, mo):
 
 @app.cell
 def _(df_sp500, mo):
+    mo.stop(df_sp500 is None)
     _df = mo.sql("""
         select * from df_sp500
         """)

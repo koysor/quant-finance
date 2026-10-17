@@ -112,8 +112,7 @@ def _(end_date, equity_fetcher, mo, start_date_3m):
 
 @app.cell
 def _(df_aapl):
-    if df_aapl is not None:
-        return df_aapl.head(10)
+    df_aapl.head(10) if df_aapl is not None else None
     return
 
 
@@ -363,7 +362,7 @@ def _(expirations, mo, options_fetcher):
 def _(calls, mo):
     if calls is not None:
         mo.output.append(mo.md("**Call options (first 10 rows):**"))
-        return calls[
+        _preview = calls[
             [
                 "Strike",
                 "Last",
@@ -374,6 +373,9 @@ def _(calls, mo):
                 "ImpliedVolatility",
             ]
         ].head(10)
+    else:
+        _preview = None
+    _preview
     return
 
 
@@ -381,7 +383,7 @@ def _(calls, mo):
 def _(mo, puts):
     if puts is not None:
         mo.output.append(mo.md("**Put options (first 10 rows):**"))
-        return puts[
+        _preview = puts[
             [
                 "Strike",
                 "Last",
@@ -392,6 +394,9 @@ def _(mo, puts):
                 "ImpliedVolatility",
             ]
         ].head(10)
+    else:
+        _preview = None
+    _preview
     return
 
 
@@ -502,8 +507,7 @@ def _(end_date, fi_fetcher, mo, start_date_3m):
 
 @app.cell
 def _(yields_df):
-    if yields_df is not None:
-        return yields_df.head(10)
+    yields_df.head(10) if yields_df is not None else None
     return
 
 
