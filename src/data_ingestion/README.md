@@ -55,7 +55,7 @@ df = fetcher.fetch_historical(
     symbol="AAPL",
     start_date="2024-01-01",
     end_date="2024-12-31",
-    interval="1d"  # Options: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
+    interval="1d",  # Options: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
 )
 
 # Returns DataFrame with columns: Open, High, Low, Close, Volume, Adj Close
@@ -123,7 +123,7 @@ Fetch the same date range for several symbols at once. Useful for portfolio and 
 data = fetcher.fetch_multiple(
     symbols=["AAPL", "MSFT", "GOOGL", "AMZN"],
     start_date="2024-01-01",
-    end_date="2024-12-31"
+    end_date="2024-12-31",
 )
 
 # Returns Dict[str, DataFrame]
@@ -259,11 +259,15 @@ Fetch the full options chain for a specific expiration, returning separate DataF
 # Fetch options chain for a specific expiration
 calls, puts = fetcher.fetch_option_chain(
     symbol="AAPL",
-    expiration="2026-06-20"  # or None for nearest expiration
+    expiration="2026-06-20",  # or None for nearest expiration
 )
 
 print(f"Found {len(calls)} call options and {len(puts)} put options")
-print(calls[['Strike', 'Last', 'Bid', 'Ask', 'Volume', 'OpenInterest', 'ImpliedVolatility']].head())
+print(
+    calls[
+        ["Strike", "Last", "Bid", "Ask", "Volume", "OpenInterest", "ImpliedVolatility"]
+    ].head()
+)
 ```
 
 **Returned columns (calls and puts):**
@@ -305,7 +309,7 @@ Fetch an options chain filtered by option type. Note: yfinance provides implied 
 ```python
 # Get call options with available Greeks
 greeks_df = fetcher.fetch_greeks("AAPL", "2026-06-20", option_type="call")
-print(greeks_df[['Strike', 'Last', 'ImpliedVolatility']].head())
+print(greeks_df[["Strike", "Last", "ImpliedVolatility"]].head())
 
 # For full Greeks, combine with Black-Scholes calculation
 # (see app_quant_finance for implementations)
@@ -336,9 +340,7 @@ fetcher = FixedIncomeFetcher()
 
 # Fetch 10-year and 30-year treasury yields
 yields = fetcher.fetch_treasury_yields(
-    maturities=["10Y", "30Y"],
-    start_date="2024-01-01",
-    end_date="2024-12-31"
+    maturities=["10Y", "30Y"], start_date="2024-01-01", end_date="2024-12-31"
 )
 
 print(yields.head())
@@ -494,7 +496,7 @@ from src.data_ingestion import DataIngestionConfig, EquityFetcher
 # Custom configuration
 config = DataIngestionConfig(
     cache_dir="/custom/path",
-    default_ttl_seconds=7200,       # 2 hours
+    default_ttl_seconds=7200,  # 2 hours
     rate_limit_per_second=1.5,
     rate_limit_burst=10,
     max_retries=5,
@@ -502,8 +504,8 @@ config = DataIngestionConfig(
     retry_max_delay=60.0,
     validate_data=True,
     allow_partial_data=False,
-    auto_adjust=True,               # yfinance auto-adjust prices
-    threads=True,                   # yfinance threading
+    auto_adjust=True,  # yfinance auto-adjust prices
+    threads=True,  # yfinance threading
 )
 
 # Use with any fetcher
@@ -539,7 +541,7 @@ from src.data_ingestion.streamlit_helpers import (
     get_stock_data,
     get_options_chain,
     get_treasury_yields,
-    display_fetch_status
+    display_fetch_status,
 )
 
 # Cached stock data fetcher (TTL: 1 hour)
@@ -556,13 +558,10 @@ st.line_chart(yields)
 
 # Display with automatic error handling and spinner
 df = display_fetch_status(
-    get_stock_data,
-    symbol="AAPL",
-    start_date="2024-01-01",
-    end_date="2024-12-31"
+    get_stock_data, symbol="AAPL", start_date="2024-01-01", end_date="2024-12-31"
 )
 if df is not None:
-    st.line_chart(df['Close'])
+    st.line_chart(df["Close"])
 ```
 
 ### Ready-Made Widgets
@@ -572,7 +571,7 @@ import streamlit as st
 from src.data_ingestion.streamlit_helpers import (
     create_stock_data_widget,
     create_options_widget,
-    format_market_data_summary
+    format_market_data_summary,
 )
 
 st.title("Stock Data Dashboard")
@@ -588,7 +587,7 @@ if df is not None:
     col2.metric("Change", f"${summary['change']:.2f}", f"{summary['change_pct']:.2f}%")
     col3.metric("Period Return", f"{summary['period_return']:.2f}%")
 
-    st.line_chart(df['Close'])
+    st.line_chart(df["Close"])
 
 # Options widget with dynamic expiration loading
 result = create_options_widget()
@@ -602,6 +601,7 @@ if result:
 
 ```python
 from src.data_ingestion.streamlit_helpers import st_cache_data_ingestion
+
 
 @st_cache_data_ingestion(ttl=3600, show_spinner=True)
 def load_custom_data(symbol):
@@ -721,12 +721,12 @@ DataValidator.validate_date_range("2024-01-01", "2024-12-31")  # True
 DataValidator.validate_date_range("2024-12-31", "2024-01-01")  # False
 
 # Validate symbols
-DataValidator.validate_symbol("AAPL")   # True
-DataValidator.validate_symbol("")       # False
+DataValidator.validate_symbol("AAPL")  # True
+DataValidator.validate_symbol("")  # False
 
 # Validate intervals
-DataValidator.validate_interval("1d")   # True
-DataValidator.validate_interval("2d")   # False
+DataValidator.validate_interval("1d")  # True
+DataValidator.validate_interval("2d")  # False
 ```
 
 ---
@@ -739,11 +739,9 @@ DataValidator.validate_interval("2d")   # False
 from src.data_ingestion.utils.retry import ExponentialBackoffRetry
 
 retry_strategy = ExponentialBackoffRetry(
-    max_retries=5,
-    base_delay=2.0,
-    max_delay=120.0,
-    exponential_base=2.0
+    max_retries=5, base_delay=2.0, max_delay=120.0, exponential_base=2.0
 )
+
 
 # Use as decorator
 @retry_strategy
@@ -751,8 +749,11 @@ def fetch_data():
     # Your fetch logic here
     pass
 
+
 # Or execute directly
-result = retry_strategy.execute(fetcher.fetch_historical, "AAPL", "2024-01-01", "2024-12-31")
+result = retry_strategy.execute(
+    fetcher.fetch_historical, "AAPL", "2024-01-01", "2024-12-31"
+)
 ```
 
 **Retryable errors** (automatically retried):
@@ -768,10 +769,7 @@ result = retry_strategy.execute(fetcher.fetch_historical, "AAPL", "2024-01-01", 
 ```python
 # Force a fresh fetch, ignoring any cached data
 df = fetcher.fetch_historical(
-    symbol="AAPL",
-    start_date="2024-01-01",
-    end_date="2024-12-31",
-    use_cache=False
+    symbol="AAPL", start_date="2024-01-01", end_date="2024-12-31", use_cache=False
 )
 ```
 
@@ -779,11 +777,7 @@ df = fetcher.fetch_historical(
 
 ```python
 # Invalidate a specific cache entry
-fetcher.invalidate_cache(
-    symbol="AAPL",
-    start_date="2024-01-01",
-    end_date="2024-12-31"
-)
+fetcher.invalidate_cache(symbol="AAPL", start_date="2024-01-01", end_date="2024-12-31")
 ```
 
 ---
@@ -851,11 +845,13 @@ src/data_ingestion/
 ```python
 # Check cache location
 from src.data_ingestion import get_default_config
+
 config = get_default_config()
 print(f"Cache location: {config.cache_db_path}")
 
 # Clear cache if corrupted
 from src.data_ingestion import CacheManager
+
 manager = CacheManager()
 manager.invalidate_all(confirm=True)
 ```
@@ -865,6 +861,7 @@ manager.invalidate_all(confirm=True)
 ```python
 # Reduce request rate
 from src.data_ingestion import DataIngestionConfig, EquityFetcher
+
 config = DataIngestionConfig(rate_limit_per_second=1.0)
 fetcher = EquityFetcher(config=config)
 ```
@@ -874,6 +871,7 @@ fetcher = EquityFetcher(config=config)
 ```python
 # Allow partial / incomplete data
 from src.data_ingestion import DataIngestionConfig, EquityFetcher
+
 config = DataIngestionConfig(allow_partial_data=True)
 fetcher = EquityFetcher(config=config)
 ```
@@ -883,6 +881,7 @@ fetcher = EquityFetcher(config=config)
 ```python
 # Verify the symbol is valid
 from src.data_ingestion.utils.validators import DataValidator
+
 print(DataValidator.validate_symbol("AAPL"))  # True
 
 # Check if it's a weekend/holiday date range
@@ -897,7 +896,11 @@ All public exports from `src.data_ingestion`:
 
 ```python
 # Configuration
-from src.data_ingestion import DataIngestionConfig, get_default_config, set_default_config
+from src.data_ingestion import (
+    DataIngestionConfig,
+    get_default_config,
+    set_default_config,
+)
 
 # Fetchers
 from src.data_ingestion import EquityFetcher, OptionsFetcher, FixedIncomeFetcher
@@ -907,12 +910,22 @@ from src.data_ingestion import DuckDBCache, CacheManager, create_cache_manager
 
 # Exceptions
 from src.data_ingestion import (
-    DataIngestionError, FetchError, CacheError,
-    RateLimitError, ValidationError, SymbolNotFoundError, ConfigurationError
+    DataIngestionError,
+    FetchError,
+    CacheError,
+    RateLimitError,
+    ValidationError,
+    SymbolNotFoundError,
+    ConfigurationError,
 )
 
 # Utilities
-from src.data_ingestion import DataValidator, TokenBucketLimiter, ExponentialBackoffRetry, retry_on_exception
+from src.data_ingestion import (
+    DataValidator,
+    TokenBucketLimiter,
+    ExponentialBackoffRetry,
+    retry_on_exception,
+)
 ```
 
 ---
