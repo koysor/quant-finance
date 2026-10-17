@@ -21,7 +21,7 @@ dev = [
     # Development tools - not installed in Docker images
     "black[jupyter]>=26.1.0",
     "jupyter>=1.1.1",
-    "marimo>=0.17.7",
+    "marimo>=0.25.1",
     "pre-commit>=3.0.0",
     "pytest>=9.0.2",
     "ruff>=0.14.13",
