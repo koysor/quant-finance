@@ -16,7 +16,7 @@ All applications are built with Streamlit and supported by a modular `src/` libr
 
 ### Dependencies
 - **Install/update:** `uv sync` (uses `pyproject.toml` with locked `uv.lock`)
-- **Python version:** 3.13 (enforced in `pyproject.toml` and `.python-version`)
+- **Python version:** 3.14 (enforced in `pyproject.toml` and `.python-version`)
 
 ### Testing
 ```bash

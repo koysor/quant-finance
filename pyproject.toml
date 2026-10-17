@@ -3,7 +3,7 @@ name = "quant-finance"
 version = "0.1.0"
 description = "Quantitative Finance Examples"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     # Runtime dependencies only - these are installed in Docker images
     "duckdb>=1.4.1",

@@ -8,7 +8,7 @@ The core of the project includes a sophisticated data ingestion module that fetc
 
 ### Prerequisites
 
-- Python 3.13
+- Python 3.14
 - Docker and Docker Compose
 
 ### Local Development

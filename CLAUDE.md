@@ -87,7 +87,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 - **Pre-commit hooks** - Local code quality enforcement (detect-secrets, black, ruff check, ruff format)
 
 ### Environment
-- Python 3.13 required (see `.python-version`)
+- Python 3.14 required (see `.python-version`)
 - Virtual environment in `.venv/`
 - Dependencies managed via `pyproject.toml` with uv lock file
 
