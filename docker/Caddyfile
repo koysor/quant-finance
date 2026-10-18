@@ -1,4 +1,6 @@
 koysor.duckdns.org {
+	encode zstd gzip
+
 	@root path /
 	redir @root /quant/ permanent
 
