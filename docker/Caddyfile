@@ -15,6 +15,14 @@ koysor.duckdns.org {
 		reverse_proxy host.docker.internal:8505
 	}
 
+	redir /flashcards /flashcards/ permanent
+
+	handle_path /flashcards/* {
+		reverse_proxy host.docker.internal:8506 {
+			header_up X-Forwarded-Prefix /flashcards
+		}
+	}
+
 	handle {
 		reverse_proxy quant-finance:8501
 	}

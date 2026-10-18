@@ -188,6 +188,9 @@ jobs:
             # Pull maths-python image (prune -af removes it since it runs outside this compose project)
             docker pull ghcr.io/koysor/maths-python:latest
 
+            # Pull flash cards image (same reason: it runs in its own compose project)
+            docker pull ghcr.io/koysor/quant-finance-flash-cards:latest || true
+
             # Start services with new images
             cd docker
             docker-compose -f docker-compose.prod.yml up -d
@@ -196,6 +199,13 @@ jobs:
             cd ~/maths-python 2>/dev/null && git fetch origin && git reset --hard origin/main || git clone https://github.com/koysor/maths-python.git ~/maths-python
             cd ~/maths-python/docker
             docker-compose -f docker-compose.prod.yml up -d
+
+            # Restart flash cards, only once it has been set up on this host (docker/.env exists)
+            if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
+              cd ~/quant-finance-flash-cards && git fetch origin && git reset --hard origin/main
+              cd docker
+              docker-compose -f docker-compose.prod.yml up -d
+            fi
 
       - name: Health check
         uses: appleboy/ssh-action@v1.0.3
@@ -229,6 +239,12 @@ jobs:
             cd ~/maths-python/docker
             docker-compose -f docker-compose.prod.yml exec -T maths-python curl -f http://localhost:8501/maths/_stcore/health && echo " Maths Python OK"
 
+            # Check flash cards health endpoint (skipped until it has been set up on this host)
+            if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
+              cd ~/quant-finance-flash-cards/docker
+              docker-compose -f docker-compose.prod.yml exec -T flashcards curl -f http://localhost:8000/ > /dev/null && echo " Flash Cards OK"
+            fi
+
             # Check Caddy is responding on port 80
             curl -sf -o /dev/null http://localhost:80 && echo " Caddy HTTP OK"
 
@@ -243,3 +259,4 @@ jobs:
           echo "  - https://koysor.duckdns.org/fixed-income/ (Fixed Income)"
           echo "  - https://koysor.duckdns.org/portfolio/ (Portfolio Management)"
           echo "  - https://koysor.duckdns.org/maths/ (Maths Python)"
+          echo "  - https://koysor.duckdns.org/flashcards/ (Flash Cards)"
