@@ -80,6 +80,9 @@ If the instance is stopped, the deploy job fails at the SSH step with `dial tcp 
 | Fixed Income         | https://koysor.duckdns.org/fixed-income/ |
 | Portfolio Management | https://koysor.duckdns.org/portfolio/    |
 | Maths Python         | https://koysor.duckdns.org/maths/        |
+| Flash Cards          | https://koysor.duckdns.org/flashcards/   |
+
+The bare root (`https://koysor.duckdns.org/`) permanently redirects to `/quant/`. Flash Cards is a Flask app deployed from the `quant-finance-flash-cards` repository (host port 8506); see its `docker/README.md`.
 
 ## Deployment Method
 
