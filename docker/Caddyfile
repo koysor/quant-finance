@@ -1,6 +1,6 @@
 koysor.duckdns.org {
 	@root path /
-	redir @root /quant/
+	redir @root /quant/ permanent
 
 	handle /options/* {
 		reverse_proxy options:8501
