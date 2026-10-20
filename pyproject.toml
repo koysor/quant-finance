@@ -24,6 +24,7 @@ dev = [
     "marimo>=0.25.1",
     "pre-commit>=3.0.0",
     "pytest>=9.0.2",
+    "pytest-cov>=7.1.0",
     "ruff>=0.14.13",
 ]
 

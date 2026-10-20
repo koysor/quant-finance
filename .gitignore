@@ -12,7 +12,6 @@ __pycache__/
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
 
-uv.lock
 notes.md
 app*/pages/*_.py
 
@@ -21,3 +20,6 @@ app*/pages/*_.py
 
 # Log files
 *.log
+
+# Coverage data
+.coverage
