@@ -6,13 +6,13 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     # Runtime dependencies only - these are installed in Docker images
-    "duckdb>=1.4.1",
+    "duckdb>=2.0.0",
     "matplotlib>=3.10.3",
     "networkx>=3.4.2",
-    "pandas>=2.2.3",
+    "pandas>=3.1.0",
     "scipy>=1.15.2",
     "sqlglot>=28.6.0",
-    "streamlit>=1.66.0",
+    "streamlit>=1.66.1",
     "yfinance>=0.2.66",
 ]
 
