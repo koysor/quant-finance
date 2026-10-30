@@ -27,8 +27,8 @@ print(df.head())
 
 All dependencies are already in `pyproject.toml`:
 - yfinance >= 0.2.66
-- duckdb >= 1.4.1
-- pandas >= 2.2.3
+- duckdb >= 1.5.6
+- pandas >= 3.0.6 (cached DataFrames are pickled, so pandas 2.x cannot read them)
 - scipy >= 1.15.2
 
 No additional packages needed!
