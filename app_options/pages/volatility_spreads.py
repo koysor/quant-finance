@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.options.payoffs import OptionLeg, strategy_payoff
 from quant_finance.pricing.black_scholes import black_scholes_call
 
 st.set_page_config(page_title="Volatility Spreads", page_icon="📈", layout="wide")
@@ -58,9 +59,11 @@ if strategy == "Straddle":
     stock_prices = np.linspace(strike * 0.5, strike * 1.5, 200)
 
     # Long straddle payoff
-    call_payoff = np.maximum(stock_prices - strike, 0)
-    put_payoff = np.maximum(strike - stock_prices, 0)
-    payoff = call_payoff + put_payoff - total_premium
+    payoff = strategy_payoff(
+        stock_prices,
+        [OptionLeg("call", strike), OptionLeg("put", strike)],
+        total_premium,
+    )
 
     break_even_lower = strike - total_premium
     break_even_upper = strike + total_premium
@@ -153,9 +156,11 @@ elif strategy == "Strangle":
     total_premium = call_premium + put_premium
     stock_prices = np.linspace(put_strike * 0.5, call_strike * 1.5, 200)
 
-    call_payoff = np.maximum(stock_prices - call_strike, 0)
-    put_payoff = np.maximum(put_strike - stock_prices, 0)
-    payoff = call_payoff + put_payoff - total_premium
+    payoff = strategy_payoff(
+        stock_prices,
+        [OptionLeg("call", call_strike), OptionLeg("put", put_strike)],
+        total_premium,
+    )
 
     break_even_lower = put_strike - total_premium
     break_even_upper = call_strike + total_premium
@@ -271,10 +276,15 @@ elif strategy == "Butterfly":
     stock_prices = np.linspace(lower_strike * 0.7, upper_strike * 1.3, 200)
 
     # Long butterfly: +1 K1 call, -2 K2 calls, +1 K3 call
-    long_k1 = np.maximum(stock_prices - lower_strike, 0)
-    short_k2 = -2 * np.maximum(stock_prices - middle_strike, 0)
-    long_k3 = np.maximum(stock_prices - upper_strike, 0)
-    payoff = long_k1 + short_k2 + long_k3 - net_debit
+    payoff = strategy_payoff(
+        stock_prices,
+        [
+            OptionLeg("call", lower_strike),
+            OptionLeg("call", middle_strike, -2),
+            OptionLeg("call", upper_strike),
+        ],
+        net_debit,
+    )
 
     max_profit = middle_strike - lower_strike - net_debit
     break_even_lower = lower_strike + net_debit
@@ -371,12 +381,15 @@ elif strategy == "Condor":
     stock_prices = np.linspace(k1 * 0.7, k4 * 1.3, 200)
 
     # Long condor: +1 K1 call, -1 K2 call, -1 K3 call, +1 K4 call
-    payoff = (
-        np.maximum(stock_prices - k1, 0)
-        - np.maximum(stock_prices - k2, 0)
-        - np.maximum(stock_prices - k3, 0)
-        + np.maximum(stock_prices - k4, 0)
-        - net_debit
+    payoff = strategy_payoff(
+        stock_prices,
+        [
+            OptionLeg("call", k1),
+            OptionLeg("call", k2, -1),
+            OptionLeg("call", k3, -1),
+            OptionLeg("call", k4),
+        ],
+        net_debit,
     )
 
     max_profit = k2 - k1 - net_debit
@@ -463,9 +476,14 @@ elif strategy == "Ratio Spread":
     stock_prices = np.linspace(lower_strike * 0.7, upper_strike * 1.5, 200)
 
     # Ratio call spread
-    long_calls = buy_qty * np.maximum(stock_prices - lower_strike, 0)
-    short_calls = sell_qty * np.maximum(stock_prices - upper_strike, 0)
-    payoff = long_calls - short_calls + net_credit
+    payoff = strategy_payoff(
+        stock_prices,
+        [
+            OptionLeg("call", lower_strike, buy_qty),
+            OptionLeg("call", upper_strike, -sell_qty),
+        ],
+        -net_credit,
+    )
 
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(stock_prices, payoff, "b-", linewidth=2, label="Ratio Spread P/L")
@@ -541,11 +559,14 @@ elif strategy == "Christmas Tree":
     stock_prices = np.linspace(k1 * 0.7, k3 * 1.4, 200)
 
     # Christmas tree: +1 K1 call, -1 K2 call, -1 K3 call
-    payoff = (
-        np.maximum(stock_prices - k1, 0)
-        - np.maximum(stock_prices - k2, 0)
-        - np.maximum(stock_prices - k3, 0)
-        - net_debit
+    payoff = strategy_payoff(
+        stock_prices,
+        [
+            OptionLeg("call", k1),
+            OptionLeg("call", k2, -1),
+            OptionLeg("call", k3, -1),
+        ],
+        net_debit,
     )
 
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -622,7 +643,9 @@ elif strategy == "Calendar Spread":
     stock_prices = np.linspace(strike * 0.7, strike * 1.3, 200)
 
     # Near-term option is at expiry (intrinsic value only)
-    near_payoff = -np.maximum(stock_prices - strike, 0)  # Short call at expiry
+    near_payoff = strategy_payoff(
+        stock_prices, [OptionLeg("call", strike, -1)]
+    )  # Short call at expiry
 
     # Far-term option still has time value
     remaining_time = 30 / 365  # Assume 30 days left on far option
@@ -708,10 +731,11 @@ elif strategy == "Time Butterfly":
     far_value = black_scholes_call(stock_prices, strike, remaining_time_far, 0.05, iv)
 
     # Near and mid are at expiry (intrinsic only)
-    near_payoff = np.maximum(stock_prices - strike, 0)
-    mid_payoff = -2 * np.maximum(stock_prices - strike, 0)
+    near_and_mid_payoff = strategy_payoff(
+        stock_prices, [OptionLeg("call", strike), OptionLeg("call", strike, -2)]
+    )
 
-    payoff = near_payoff + mid_payoff + far_value - net_debit
+    payoff = near_and_mid_payoff + far_value - net_debit
 
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(stock_prices, payoff, "b-", linewidth=2, label="Time Butterfly P/L")
@@ -785,7 +809,7 @@ elif strategy == "Diagonal Spreads":
     stock_prices = np.linspace(far_strike * 0.7, near_strike * 1.4, 200)
 
     # At near-term expiry
-    near_payoff = -np.maximum(stock_prices - near_strike, 0)
+    near_payoff = strategy_payoff(stock_prices, [OptionLeg("call", near_strike, -1)])
 
     # Far-term option still has time value
     remaining_time = 30 / 365

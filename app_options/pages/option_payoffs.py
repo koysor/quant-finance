@@ -2,6 +2,15 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.options.payoffs import (
+    call_break_even,
+    long_call_payoff,
+    long_put_payoff,
+    put_break_even,
+    short_call_payoff,
+    short_put_payoff,
+)
+
 st.set_page_config(page_title="Option Payoffs", page_icon="📈", layout="wide")
 st.header("Option Payoffs")
 
@@ -37,17 +46,17 @@ stock_prices = np.linspace(
 
 # Calculate payoff based on position type
 if option_position_type == "Long Call":
-    payoff = np.maximum(stock_prices - strike_price, 0) - premium
-    break_even = strike_price + premium
+    payoff = long_call_payoff(stock_prices, strike_price, premium)
+    break_even = call_break_even(strike_price, premium)
 elif option_position_type == "Short Call":
-    payoff = premium - np.maximum(stock_prices - strike_price, 0)
-    break_even = strike_price + premium
+    payoff = short_call_payoff(stock_prices, strike_price, premium)
+    break_even = call_break_even(strike_price, premium)
 elif option_position_type == "Long Put":
-    payoff = np.maximum(strike_price - stock_prices, 0) - premium
-    break_even = strike_price - premium
+    payoff = long_put_payoff(stock_prices, strike_price, premium)
+    break_even = put_break_even(strike_price, premium)
 else:  # Short Put
-    payoff = premium - np.maximum(strike_price - stock_prices, 0)
-    break_even = strike_price - premium
+    payoff = short_put_payoff(stock_prices, strike_price, premium)
+    break_even = put_break_even(strike_price, premium)
 
 # Create the matplotlib figure
 fig, ax = plt.subplots(figsize=(10, 6))

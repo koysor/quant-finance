@@ -2,6 +2,11 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.portfolio.mpt import (
+    two_asset_frontier,
+    two_asset_min_variance_weight,
+)
+
 st.set_page_config(
     page_title="Modern Portfolio Theory - Efficient Frontier",
     page_icon="💼",
@@ -148,44 +153,21 @@ sigma2_dec = sigma2 / 100
 
 # Generate portfolio combinations
 weights = np.linspace(0, 1, 100)
-portfolio_returns = []
-portfolio_risks = []
-
-for w1 in weights:
-    w2 = 1 - w1
-    # Portfolio return
-    port_return = w1 * r1_dec + w2 * r2_dec
-    # Portfolio variance
-    port_variance = (
-        (w1**2) * (sigma1_dec**2)
-        + (w2**2) * (sigma2_dec**2)
-        + 2 * w1 * w2 * sigma1_dec * sigma2_dec * rho
-    )
-    port_risk = np.sqrt(port_variance)
-
-    portfolio_returns.append(port_return * 100)
-    portfolio_risks.append(port_risk * 100)
+portfolio_returns, portfolio_risks = two_asset_frontier(
+    weights, r1_dec, r2_dec, sigma1_dec, sigma2_dec, rho
+)
+portfolio_returns = portfolio_returns * 100
+portfolio_risks = portfolio_risks * 100
 
 # Find minimum variance portfolio
 # Analytical solution for two assets
-if sigma1_dec != sigma2_dec or rho != 1:
-    w1_min_var = (sigma2_dec**2 - sigma1_dec * sigma2_dec * rho) / (
-        sigma1_dec**2 + sigma2_dec**2 - 2 * sigma1_dec * sigma2_dec * rho
-    )
-    w1_min_var = np.clip(w1_min_var, 0, 1)
-else:
-    w1_min_var = 0.5
-
+w1_min_var = two_asset_min_variance_weight(sigma1_dec, sigma2_dec, rho)
 w2_min_var = 1 - w1_min_var
-min_var_return = (w1_min_var * r1_dec + w2_min_var * r2_dec) * 100
-min_var_risk = (
-    np.sqrt(
-        (w1_min_var**2) * (sigma1_dec**2)
-        + (w2_min_var**2) * (sigma2_dec**2)
-        + 2 * w1_min_var * w2_min_var * sigma1_dec * sigma2_dec * rho
-    )
-    * 100
+min_var_return, min_var_risk = two_asset_frontier(
+    w1_min_var, r1_dec, r2_dec, sigma1_dec, sigma2_dec, rho
 )
+min_var_return = min_var_return * 100
+min_var_risk = min_var_risk * 100
 
 # Create visualisation
 fig, ax = plt.subplots(figsize=(10, 6))

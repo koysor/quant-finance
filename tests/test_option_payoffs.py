@@ -3,12 +3,14 @@
 import numpy as np
 
 from quant_finance.options.payoffs import (
+    OptionLeg,
     call_break_even,
     long_call_payoff,
     long_put_payoff,
     put_break_even,
     short_call_payoff,
     short_put_payoff,
+    strategy_payoff,
 )
 
 
@@ -166,3 +168,63 @@ class TestPayoffSymmetry:
         long = long_put_payoff(stock_price=stock_prices, strike=100, premium=5)
         short = short_put_payoff(stock_price=stock_prices, strike=100, premium=5)
         np.testing.assert_array_equal(long + short, np.zeros(5))
+
+
+class TestStrategyPayoff:
+    """Tests for multi-leg strategy payoffs."""
+
+    PRICES = np.linspace(50.0, 150.0, 201)
+
+    def test_single_legs_match_the_individual_payoffs(self):
+        long_call = strategy_payoff(self.PRICES, [OptionLeg("call", 100)], 5.0)
+        short_put = strategy_payoff(self.PRICES, [OptionLeg("put", 100, -1)], -5.0)
+        np.testing.assert_array_equal(
+            long_call, long_call_payoff(self.PRICES, 100, 5.0)
+        )
+        np.testing.assert_array_equal(
+            short_put, short_put_payoff(self.PRICES, 100, 5.0)
+        )
+
+    def test_straddle_equals_the_sum_of_its_legs(self):
+        legs = [OptionLeg("call", 100), OptionLeg("put", 100)]
+        np.testing.assert_allclose(
+            strategy_payoff(self.PRICES, legs, 10.0),
+            long_call_payoff(self.PRICES, 100, 5.0)
+            + long_put_payoff(self.PRICES, 100, 5.0),
+        )
+
+    def test_straddle_break_evens_give_zero_profit(self):
+        legs = [OptionLeg("call", 100), OptionLeg("put", 100)]
+        np.testing.assert_allclose(strategy_payoff([90.0, 110.0], legs, 10.0), 0.0)
+
+    def test_butterfly_peaks_at_the_middle_strike(self):
+        legs = [
+            OptionLeg("call", 90),
+            OptionLeg("call", 100, -2),
+            OptionLeg("call", 110),
+        ]
+        payoff = strategy_payoff(self.PRICES, legs, 2.0)
+        assert self.PRICES[np.argmax(payoff)] == 100.0
+        assert payoff.max() == 8.0
+        assert payoff.min() == -2.0
+
+    def test_condor_is_flat_between_the_short_strikes(self):
+        legs = [
+            OptionLeg("call", 80),
+            OptionLeg("call", 90, -1),
+            OptionLeg("call", 110, -1),
+            OptionLeg("call", 120),
+        ]
+        np.testing.assert_allclose(strategy_payoff([90.0, 100.0, 110.0], legs), 10.0)
+
+    def test_net_credit_adds_to_the_payoff(self):
+        legs = [OptionLeg("call", 100, 1), OptionLeg("call", 110, -2)]
+        assert strategy_payoff(100.0, legs, net_premium=-3.0) == 3.0
+
+    def test_accepts_a_scalar_price(self):
+        assert np.ndim(strategy_payoff(100.0, [OptionLeg("call", 90)])) == 0
+
+    def test_does_not_modify_the_input_prices(self):
+        prices = self.PRICES.copy()
+        strategy_payoff(prices, [OptionLeg("call", 100)], 1.0)
+        np.testing.assert_array_equal(prices, self.PRICES)

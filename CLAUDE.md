@@ -32,8 +32,10 @@ The codebase follows a modular structure:
   - `pages/` - MPT, CAPM, and alpha analysis pages
 
 - **`src/quant_finance/`** - Installable library; put reusable calculations here, not in pages
-  - `pricing/` - Pricing models (`black_scholes`)
-  - `options/` - Option payoff calculation utilities
+  - `pricing/` - Pricing models and no-arbitrage relationships (`black_scholes`, `parity`)
+  - `options/` - Option and multi-leg strategy payoffs
+  - `portfolio/` - Modern Portfolio Theory and CAPM (`mpt`, `capm`)
+  - `stochastic/` - Simulated paths (GBM, Wiener process, random walk)
   - `data_ingestion/` - Data fetching package with caching (DuckDB), rate limiting, and retry logic; provides `EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`
 
 - **`projects/`** - Portfolio projects; see `projects/README.md` for the required structure and write-up
@@ -168,7 +170,7 @@ pre-commit run --all-files  # Run hooks manually on all files
   - Include mathematical formulations using LaTeX
   - Provide interactive examples and visualisations
 
-- New pages import calculations from `quant_finance` rather than defining them, so they can be tested; older pages still define some inline
+- Pages import models and formulae from `quant_finance` rather than defining them, so they can be tested; plotting, widgets and one-line statistics stay in the page
 - Pages are educational-focused, combining theory with practical Python implementations
 - Mathematical concepts are explained with both LaTeX formulations and code examples
 

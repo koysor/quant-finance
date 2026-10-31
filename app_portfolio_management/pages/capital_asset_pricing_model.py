@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.portfolio.capm import capm_expected_return, jensens_alpha
+
 st.set_page_config(
     page_title="Capital Asset Pricing Model (CAPM)", page_icon="💼", layout="wide"
 )
@@ -185,12 +187,9 @@ if show_custom_assets:
         "color": "orange",
     }
 
-# Calculate market risk premium
-market_risk_premium = market_return - risk_free_rate
-
 # Generate SML line
 betas = np.linspace(-0.5, 2.5, 100)
-expected_returns = risk_free_rate + betas * market_risk_premium
+expected_returns = capm_expected_return(betas, risk_free_rate, market_return)
 
 # Create visualisation
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -208,8 +207,8 @@ ax.plot(
 for name, asset in assets.items():
     beta = asset["beta"]
     actual = asset["actual"]
-    expected = risk_free_rate + beta * market_risk_premium
-    alpha = actual - expected
+    expected = capm_expected_return(beta, risk_free_rate, market_return)
+    alpha = jensens_alpha(actual, beta, risk_free_rate, market_return)
 
     # Plot actual position
     marker = "o" if name in ["Market Portfolio", "Risk-Free Asset"] else "s"
@@ -290,8 +289,8 @@ if show_custom_assets:
         asset = assets[name]
         beta = asset["beta"]
         actual = asset["actual"]
-        expected = risk_free_rate + beta * market_risk_premium
-        alpha = actual - expected
+        expected = capm_expected_return(beta, risk_free_rate, market_return)
+        alpha = jensens_alpha(actual, beta, risk_free_rate, market_return)
 
         with cols[i]:
             st.markdown(f"**{name}**")

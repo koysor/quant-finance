@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.portfolio import mpt
+
 st.set_page_config(
     page_title="Portfolio Variance and the Covariance Matrix",
     page_icon="💼",
@@ -224,22 +226,19 @@ sigma_a_dec = sigma_a / 100
 sigma_b_dec = sigma_b / 100
 sigma_c_dec = sigma_c / 100
 
-# Build covariance matrix
-# Cov(i,j) = rho_ij * sigma_i * sigma_j
-cov_aa = sigma_a_dec**2
-cov_bb = sigma_b_dec**2
-cov_cc = sigma_c_dec**2
-cov_ab = rho_ab * sigma_a_dec * sigma_b_dec
-cov_ac = rho_ac * sigma_a_dec * sigma_c_dec
-cov_bc = rho_bc * sigma_b_dec * sigma_c_dec
-
-covariance_matrix = np.array(
-    [[cov_aa, cov_ab, cov_ac], [cov_ab, cov_bb, cov_bc], [cov_ac, cov_bc, cov_cc]]
-)
-
 correlation_matrix = np.array(
     [[1.0, rho_ab, rho_ac], [rho_ab, 1.0, rho_bc], [rho_ac, rho_bc, 1.0]]
 )
+
+# Build covariance matrix
+# Cov(i,j) = rho_ij * sigma_i * sigma_j
+covariance_matrix = mpt.covariance_from_correlation(
+    [sigma_a_dec, sigma_b_dec, sigma_c_dec], correlation_matrix
+)
+
+cov_aa, cov_ab, cov_ac = covariance_matrix[0]
+cov_bb, cov_bc = covariance_matrix[1, 1:]
+cov_cc = covariance_matrix[2, 2]
 
 weights = np.array([w_a_norm, w_b_norm, w_c_norm])
 
@@ -315,7 +314,7 @@ st.latex(rf"""
 
 st.markdown("##### Step 4: Compute wᵀΣw (Final Dot Product)")
 
-portfolio_variance = weights @ sigma_w
+portfolio_variance = mpt.portfolio_variance(weights, covariance_matrix)
 portfolio_volatility = np.sqrt(portfolio_variance) * 100
 
 st.write("Finally, take the dot product with the weight vector:")
