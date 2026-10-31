@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data_ingestion.cache.duckdb_cache import DuckDBCache
-from src.data_ingestion.config import DataIngestionConfig
-from src.data_ingestion.exceptions import CacheError
+from quant_finance.data_ingestion.cache.duckdb_cache import DuckDBCache
+from quant_finance.data_ingestion.config import DataIngestionConfig
+from quant_finance.data_ingestion.exceptions import CacheError
 
 
 @pytest.fixture

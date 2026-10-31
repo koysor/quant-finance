@@ -12,7 +12,7 @@ Main Components:
     - CacheManager: High-level cache management utilities
 
 Quick Start:
-    >>> from src.data_ingestion import EquityFetcher
+    >>> from quant_finance.data_ingestion import EquityFetcher
     >>>
     >>> # Fetch stock data with automatic caching
     >>> fetcher = EquityFetcher()
@@ -28,14 +28,14 @@ Features:
     - Comprehensive error handling
 
 Example with Options:
-    >>> from src.data_ingestion import OptionsFetcher
+    >>> from quant_finance.data_ingestion import OptionsFetcher
     >>>
     >>> fetcher = OptionsFetcher()
     >>> calls, puts = fetcher.fetch_option_chain("AAPL", "2024-01-19")
     >>> print(f"Found {len(calls)} call options")
 
 Example with Treasury Yields:
-    >>> from src.data_ingestion import FixedIncomeFetcher
+    >>> from quant_finance.data_ingestion import FixedIncomeFetcher
     >>>
     >>> fetcher = FixedIncomeFetcher()
     >>> yields = fetcher.fetch_treasury_yields(
@@ -47,7 +47,7 @@ Example with Treasury Yields:
 
 Streamlit Integration:
     >>> import streamlit as st
-    >>> from src.data_ingestion.streamlit_helpers import get_stock_data
+    >>> from quant_finance.data_ingestion.streamlit_helpers import get_stock_data
     >>>
     >>> # Automatically cached for Streamlit
     >>> df = get_stock_data("AAPL", "2023-01-01", "2023-12-31")

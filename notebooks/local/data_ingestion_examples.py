@@ -8,16 +8,9 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import matplotlib.pyplot as plt
-    import sys
-    from pathlib import Path
     from datetime import datetime, timedelta
 
-    # Add project root to path for src imports
-    project_root = Path(__file__).parent.parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-
-    from src.data_ingestion import (
+    from quant_finance.data_ingestion import (
         EquityFetcher,
         OptionsFetcher,
         FixedIncomeFetcher,
@@ -45,9 +38,7 @@ def _():
         mo,
         options_fetcher,
         plt,
-        project_root,
         start_date_3m,
-        sys,
         timedelta,
     )
 
@@ -60,6 +51,8 @@ def _(mo):
     This notebook demonstrates every data item and fetcher available in the
     `data_ingestion` package. Each section fetches a small sample of data and
     shows how it can be used in common quantitative finance workflows.
+
+    This notebook runs locally only, because it fetches live data from Yahoo Finance. Run it with `uv run marimo edit notebooks/local/data_ingestion_examples.py`.
 
     **Data sources:** Yahoo Finance (via yfinance)
 

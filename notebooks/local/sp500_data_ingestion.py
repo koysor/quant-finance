@@ -8,13 +8,7 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import matplotlib.pyplot as plt
-    import sys
-    from pathlib import Path
 
-    # Add project root to path for src imports
-    project_root = Path(__file__).parent.parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
     return mo, plt
 
 
@@ -25,6 +19,8 @@ def _(mo):
 
     This notebook uses the `data_ingestion` module to fetch S&P 500 historical data
     with automatic caching, rate limiting, and error handling.
+
+    This notebook runs locally only, because it fetches live data from Yahoo Finance. Run it with `uv run marimo edit notebooks/local/sp500_data_ingestion.py`.
     """)
     return
 
@@ -87,7 +83,7 @@ def _(end_date, interval, mo, start_date, use_cache):
 @app.cell
 def _():
     # Import the data ingestion module
-    from src.data_ingestion import EquityFetcher, FetchError
+    from quant_finance.data_ingestion import EquityFetcher, FetchError
 
     return EquityFetcher, FetchError
 

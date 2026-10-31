@@ -20,8 +20,9 @@ The generated page MUST follow these conventions:
    - `app_portfolio_management/` — `💼`
 3. **Header** — `st.header("Page Title")`
 4. **Educational content** — introductory `st.write()` explaining the concept
-5. **Mathematical formulation** — LaTeX via `st.latex()` with corresponding `st.code(latex_code, language="latex")`
-6. **Interactive example** — sliders/inputs with a matplotlib visualisation
-7. **British English spelling** throughout (e.g. optimise, modelling, colour)
+5. **Calculations** — import from `quant_finance` (add to `src/quant_finance/` with tests in `tests/` if missing); do not define models in the page
+6. **Mathematical formulation** — LaTeX via `st.latex()` with corresponding `st.code(latex_code, language="latex")`
+7. **Interactive example** — sliders/inputs with a matplotlib visualisation
+8. **British English spelling** throughout (e.g. optimise, modelling, colour)
 
 Create the file at: `app_$0/pages/$1.py`

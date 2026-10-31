@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+
+from quant_finance.pricing.black_scholes import black_scholes_call, black_scholes_put
 
 st.set_page_config(page_title="Put-Call Parity", page_icon="📈", layout="wide")
 st.header("Put-Call Parity")
@@ -19,29 +20,6 @@ st.info(
     "underlying stock. Because they have identical payoffs in every possible future state, "
     "the no-arbitrage principle dictates they must cost the same today."
 )
-
-
-# ---------------------------------------------------------------------------
-# Helper functions
-# ---------------------------------------------------------------------------
-
-
-def black_scholes_call(S, K, T, r, sigma):
-    """European call price via Black-Scholes."""
-    if T <= 0:
-        return np.maximum(S - K, 0.0)
-    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-
-
-def black_scholes_put(S, K, T, r, sigma):
-    """European put price via Black-Scholes."""
-    if T <= 0:
-        return np.maximum(K - S, 0.0)
-    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    return K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
 
 # ---------------------------------------------------------------------------

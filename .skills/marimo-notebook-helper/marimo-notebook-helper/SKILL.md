@@ -37,18 +37,14 @@ If you need complex logic with many temporary variables, wrap it in a function o
 Marimo automatically tracks dependencies based on function arguments. Ensure all required global variables are passed as arguments to the cell function.
 
 ### 4. Project Imports
-Always ensure the project root is in `sys.path` for notebooks located in `src/notebooks/`.
+Notebooks in `notebooks/` are published to GitHub Pages and run in the browser, so they can only import `marimo`, `numpy`, `pandas` and `matplotlib`. Notebooks that import `quant_finance` or fetch data go in `notebooks/local/`, as below; no `sys.path` changes are needed.
 
 ```python
 @app.cell
 def _():
-    import sys
-    from pathlib import Path
+    from quant_finance.data_ingestion import EquityFetcher
 
-    project_root = Path(__file__).parent.parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
-    return
+    return (EquityFetcher,)
 ```
 
 ## Data Ingestion API Reference

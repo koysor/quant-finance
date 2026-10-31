@@ -28,8 +28,8 @@ def _(mo):
 
     * Starts from an initial value $S_0$ (initial asset price).
     * Uses parameters:
-      * $\mu$: the drift coefficient (expected return rate)
-      * $\sigma$: the volatility (standard deviation of returns)
+      * $\\mu$: the drift coefficient (expected return rate)
+      * $\\sigma$: the volatility (standard deviation of returns)
       * $T$: the total time horizon for the simulation
       * $dt$: the time step increment
       * $n_{paths}$: number of independent GBM paths to simulate.

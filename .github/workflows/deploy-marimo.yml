@@ -32,7 +32,7 @@ jobs:
       - name: Export notebooks to WASM
         run: |
           mkdir -p _site
-          for notebook in src/notebooks/*.py; do
+          for notebook in notebooks/*.py; do
             name=$(basename "$notebook" .py)
             uv run marimo export html-wasm "$notebook" -o "_site/${name}.html" --mode run
           done
@@ -59,7 +59,7 @@ jobs:
             <h1>Quant Finance Notebooks</h1>
             <ul>
           EOF
-          for notebook in src/notebooks/*.py; do
+          for notebook in notebooks/*.py; do
             name=$(basename "$notebook" .py)
             title=$(echo "$name" | tr '_' ' ' | sed 's/.*/\u&/')
             echo "      <li><a href=\"${name}.html\">${title}</a></li>" >> _site/index.html

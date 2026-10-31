@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from src.options.payoffs import (
+from quant_finance.options.payoffs import (
     call_break_even,
     long_call_payoff,
     long_put_payoff,

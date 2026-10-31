@@ -5,7 +5,7 @@ Provides methods for fetching historical stock prices, OHLCV data,
 and stock information.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import pandas as pd
 import yfinance as yf
 import logging
@@ -251,7 +251,7 @@ class EquityFetcher(BaseFetcher):
 
         return result
 
-    def fetch_realtime_quote(self, symbol: str) -> Dict[str, any]:
+    def fetch_realtime_quote(self, symbol: str) -> Dict[str, Any]:
         """Fetch current real-time quote for a symbol.
 
         Args:
@@ -285,7 +285,7 @@ class EquityFetcher(BaseFetcher):
             logger.error(f"Failed to fetch quote for {symbol}: {e}")
             raise FetchError(f"Failed to fetch real-time quote: {e}") from e
 
-    def get_info(self, symbol: str) -> Dict[str, any]:
+    def get_info(self, symbol: str) -> Dict[str, Any]:
         """Get detailed information about a stock.
 
         Args:

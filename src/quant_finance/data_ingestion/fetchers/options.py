@@ -5,7 +5,7 @@ Provides methods for fetching options chains, available expirations,
 and options data with Greeks.
 """
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 import pandas as pd
 import yfinance as yf
 import logging
@@ -104,7 +104,7 @@ class OptionsFetcher(BaseFetcher):
             logger.error(f"Failed to fetch options for {symbol}: {e}")
             raise FetchError(f"Failed to fetch options data: {e}") from e
 
-    def _validate_data(self, data: any) -> bool:
+    def _validate_data(self, data: Any) -> bool:
         """Validate options data.
 
         Args:

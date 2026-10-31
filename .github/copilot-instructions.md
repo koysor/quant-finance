@@ -7,10 +7,10 @@
 This is an educational quantitative finance repository with four interactive Streamlit applications:
 - **Quant Finance** - Stochastic processes, Greeks, volatility modelling, risk management
 - **Options** - Options pricing (Black-Scholes, binomial trees, payoff analysis)
-- **Fixed Income** - Bond pricing and fixed income securities
+- **Fixed Income** - Fixed income securities (landing page only for now)
 - **Portfolio Management** - Modern Portfolio Theory, CAPM, alpha analysis
 
-All applications are built with Streamlit and supported by a modular `src/` library.
+All applications are built with Streamlit and supported by the `quant_finance` library in `src/quant_finance/`.
 
 ## Build, Test & Lint Commands
 
@@ -73,15 +73,16 @@ docker-compose up --build
 - Four independent Streamlit apps, each with:
   - Main entry point: `{app_name}.py` (sets page config with `wide` layout)
   - `pages/` - Sub-pages using Streamlit's multi-page app feature
-  - Each page is self-contained with its own mathematics and visualisations
+  - Each page has its own explanations and visualisations; new pages import calculations from `quant_finance`
 
-**Core Library** (`src/`)
+**Core Library** (`src/quant_finance/`)
 - `data_ingestion/` - Financial data fetching with DuckDB caching and rate limiting
-- `options/` - Options pricing models (Black-Scholes, binomial trees, Greeks)
-- `portfolio_management/` - Portfolio optimisation and analysis
-- `stochastic/` - Stochastic processes (GBM, random walks, Wiener processes)
-- `value_at_risk/` - Risk metrics and VaR calculations
-- `notebooks/` - Standalone simulation scripts
+- `options/` - Option payoff calculations
+- `pricing/` - Pricing models (Black-Scholes)
+
+**Other directories**
+- `projects/` - Portfolio projects (see `projects/README.md`)
+- `notebooks/` - Marimo notebooks
 
 **Testing** (`tests/`)
 - Currently minimal; `test_option_payoffs.py` covers options payoff calculations
@@ -106,7 +107,7 @@ docker-compose up --build
 - NetworkX for tree structures (binomial models)
 
 **Data Ingestion**
-- Centralised in `src/data_ingestion/` with caching and retry logic
+- Centralised in `src/quant_finance/data_ingestion/` with caching and retry logic
 - Uses `yfinance` for market data
 - DuckDB backend for efficient querying
 - Rate limiting prevents API throttling
@@ -205,6 +206,6 @@ Pre-commit hooks run locally on commit:
 
 - **Limited Test Coverage:** While a testing framework is in place (using `pytest`, as seen in `tests/` and `.github/workflows/tests.yml`), test coverage is currently limited to option payoffs. Adding tests is strongly encouraged for new features and existing modules.
 - **Docker images** exclude dev dependencies; only runtime packages are installed
-- **Data caching** is critical for performance; always check `src/data_ingestion/` before adding new data fetching logic
+- **Data caching** is critical for performance; always check `src/quant_finance/data_ingestion/` before adding new data fetching logic
 - **Streamlit state management** can be tricky; use `st.session_state` carefully and document non-obvious state dependencies
 - **Port mappings for Docker:** 8501 (Quant), 8502 (Options), 8503 (Fixed Income), 8504 (Portfolio)

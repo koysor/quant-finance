@@ -19,7 +19,7 @@ except ImportError:
     STREAMLIT_AVAILABLE = False
 
     # Mock st.cache_data for type hints
-    class st:
+    class st:  # type: ignore[no-redef]
         @staticmethod
         def cache_data(*args, **kwargs):
             def decorator(func):
@@ -63,10 +63,10 @@ def st_cache_data_ingestion(ttl: int = 3600, show_spinner: bool = True):
     if not STREAMLIT_AVAILABLE:
         logger.warning("Streamlit not available, caching disabled")
 
-        def decorator(func: Callable) -> Callable:
+        def passthrough(func: Callable) -> Callable:
             return func
 
-        return decorator
+        return passthrough
 
     def decorator(func: Callable) -> Callable:
         @st.cache_data(ttl=ttl, show_spinner=show_spinner)

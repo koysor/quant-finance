@@ -5,7 +5,7 @@ Provides the core cache-or-fetch pattern used by all data fetchers.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 import logging
 import pandas as pd
 
@@ -55,7 +55,7 @@ class BaseFetcher(ABC):
         self._retry_strategy = None
 
     @property
-    def cache(self) -> Optional[BaseCache]:
+    def cache(self) -> BaseCache:
         """Get cache instance, lazily initialized."""
         if self._cache is None:
             # Import here to avoid circular dependency
@@ -90,7 +90,7 @@ class BaseFetcher(ABC):
         return self._retry_strategy
 
     @abstractmethod
-    def _fetch_impl(self, **kwargs) -> pd.DataFrame:
+    def _fetch_impl(self, *args: Any, **kwargs: Any) -> pd.DataFrame:
         """Implementation-specific data fetching logic.
 
         Subclasses must implement this method to actually fetch data
@@ -123,7 +123,7 @@ class BaseFetcher(ABC):
         pass
 
     @abstractmethod
-    def _build_cache_key(self, **kwargs) -> str:
+    def _build_cache_key(self, *args: Any, **kwargs: Any) -> str:
         """Build cache key from fetch parameters.
 
         Subclasses must implement this to create unique,
@@ -210,7 +210,7 @@ class BaseFetcher(ABC):
 
         return data
 
-    def _get_cache_metadata(self, **kwargs) -> dict:
+    def _get_cache_metadata(self, *args: Any, **kwargs: Any) -> dict:
         """Get metadata to store with cached data.
 
         Subclasses can override to add custom metadata.

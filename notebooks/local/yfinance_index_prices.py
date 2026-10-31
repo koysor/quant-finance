@@ -6,9 +6,18 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    import marimo as mo
     import yfinance as yf
 
-    return (yf,)
+    return mo, yf
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    This notebook runs locally only, because it fetches live data from Yahoo Finance. Run it with `uv run marimo edit notebooks/local/yfinance_index_prices.py`.
+    """)
+    return
 
 
 @app.cell
@@ -22,11 +31,6 @@ def _(yf):
 @app.cell
 def _(df):
     df
-    return
-
-
-@app.cell
-def _():
     return
 
 
