@@ -88,8 +88,8 @@ with col1:
     n_paths = st.slider(
         "Number of Paths",
         min_value=1,
-        max_value=200,
-        value=50,
+        max_value=1000,
+        value=500,
         help="The number of independent Wiener process paths to simulate. "
         "More paths gives a better approximation of the true distribution but is slower to compute. "
         "Try increasing this to see the sample mean and standard deviation converge to 0 and √T.",
