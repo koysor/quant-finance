@@ -580,14 +580,15 @@ put-call parity holds continuously throughout the option's life.
 - As T approaches 0, values converge to the at-expiration payoffs
 """)
 
-    idx_atm = np.argmin(np.abs(S_range - K_pre))
+    call_atm = black_scholes_call(K_pre, K_pre, T_pre, r_pre, sigma_pre)
+    put_atm = black_scholes_put(K_pre, K_pre, T_pre, r_pre, sigma_pre)
     st.markdown(f"""
 **Sample values at S₀ = K (ATM):**
-- Call value: £{call_values[idx_atm]:.2f}
-- Put value: £{put_values[idx_atm]:.2f}
+- Call value: £{call_atm:.2f}
+- Put value: £{put_atm:.2f}
 - Bond PV(K): £{PV_K_pre:.2f}
-- Portfolio A: £{portfolio_A_pre[idx_atm]:.2f}
-- Portfolio B: £{portfolio_B_pre[idx_atm]:.2f}
+- Portfolio A: £{call_atm + PV_K_pre:.2f}
+- Portfolio B: £{put_atm + K_pre:.2f}
 """)
 
 
