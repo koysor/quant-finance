@@ -9,6 +9,7 @@ dependencies = [
     "duckdb>=1.5.6",
     "matplotlib>=3.10.3",
     "networkx>=3.4.2",
+    "numpy>=2.5.4",
     "pandas>=3.0.6",
     "scipy>=1.15.2",
     "sqlglot>=28.6.0",
@@ -22,12 +23,30 @@ dev = [
     "black[jupyter]>=26.1.0",
     "jupyter>=1.1.1",
     "marimo>=0.25.1",
+    "mypy>=1.18.0",
     "pre-commit>=3.0.0",
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.2",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/quant_finance"]
+
 [tool.ruff.lint]
 # Pin the rule set: Ruff 0.17 widened the defaults, which broke CI (unpinned ruff).
 select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "quant_finance.pricing.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_any_generics = true
+warn_return_any = true

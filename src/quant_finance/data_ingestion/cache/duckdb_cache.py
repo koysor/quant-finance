@@ -112,7 +112,7 @@ class DuckDBCache(BaseCache):
         self.config.ensure_cache_dir()
 
         # Initialize connection
-        self.con = None
+        self.con: Any = None
         self._initialize_database()
 
     def _initialize_database(self) -> None:
@@ -366,7 +366,7 @@ class DuckDBCache(BaseCache):
             >>> print(f"Total entries: {stats['total_entries']}")
         """
         try:
-            stats = {
+            stats: Dict[str, Any] = {
                 "db_path": self.db_path,
                 "db_size_mb": Path(self.db_path).stat().st_size / (1024 * 1024),
                 "tables": {},

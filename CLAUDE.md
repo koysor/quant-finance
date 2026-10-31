@@ -8,7 +8,7 @@ This is a quantitative finance educational repository that demonstrates Python i
 
 1. **Quantitative Finance App** (`app_quant_finance/`) - Educational content covering stochastic processes, Greeks, volatility modelling, risk management, and mathematical finance concepts
 2. **Options App** (`app_options/`) - Focused on options pricing models including binomial trees, Black-Scholes, and option payoffs
-3. **Fixed Income App** (`app_fixed_income/`) - Bond pricing and fixed income securities
+3. **Fixed Income App** (`app_fixed_income/`) - Fixed income securities (landing page only for now)
 4. **Portfolio Management App** (`app_portfolio_management/`) - Modern Portfolio Theory, CAPM, and alpha analysis
 
 ## Architecture
@@ -25,17 +25,23 @@ The codebase follows a modular structure:
 
 - **`app_fixed_income/`** - Streamlit app for fixed income and bonds
   - `fixed_income.py` - Main entry point
-  - `pages/` - Bond pricing and fixed income pages
+  - `pages/` - Not yet present; add fixed income pages here
 
 - **`app_portfolio_management/`** - Streamlit app for portfolio management
   - `portfolio_management.py` - Main entry point
   - `pages/` - MPT, CAPM, and alpha analysis pages
 
-- **`src/`** - Core Python modules and notebooks
-  - `data_ingestion/` - Data fetching package with caching (DuckDB), rate limiting, and retry logic; provides `EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`
-  - `notebooks/` - Marimo notebook scripts for simulations and data analysis (GBM, distributions, yfinance)
+- **`src/quant_finance/`** - Installable library; put reusable calculations here, not in pages
+  - `pricing/` - Pricing models (`black_scholes`)
   - `options/` - Option payoff calculation utilities
-  - `portfolio_management/`, `stochastic/`, `value_at_risk/` - Placeholder directories for future modules
+  - `data_ingestion/` - Data fetching package with caching (DuckDB), rate limiting, and retry logic; provides `EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`
+
+- **`projects/`** - Portfolio projects; see `projects/README.md` for the required structure and write-up
+
+- **`notebooks/`** - Marimo notebooks published to GitHub Pages (GBM, distributions); they run in the browser, so they can't import `quant_finance` or fetch data, and `tests/test_notebooks.py` enforces this
+  - `local/` - Notebooks that fetch live data or use `quant_finance`; not published
+
+- **`tests/`** - pytest suite for the library
 
 ## Development Commands
 
@@ -73,6 +79,9 @@ ruff check .
 # Format check (matches CI)
 ruff format .
 
+# Type check the library (matches CI)
+uv run mypy src/quant_finance
+
 # Pre-commit hooks (automatically runs black, ruff check, and ruff format on commit)
 pre-commit install        # Setup hooks (already done)
 pre-commit run --all-files  # Run hooks manually on all files
@@ -80,7 +89,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 
 ### CI/CD
 - **GitHub Actions** workflows:
-  - `code-quality.yml` - Validates black formatting and ruff linting on push/PR
+  - `code-quality.yml` - Validates black formatting, ruff linting and mypy types on push/PR
   - `tests.yml` - Runs pytest on push/PR
   - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
   - `deploy-marimo.yml` - Exports marimo notebooks to WASM and deploys to GitHub Pages
@@ -145,6 +154,7 @@ pre-commit run --all-files  # Run hooks manually on all files
 
 - **jupyter** / **marimo** - Interactive notebook environments
 - **pytest** - Testing framework
+- **mypy** - Static type checking for `src/quant_finance/`
 - **black** - Code formatting
 - **ruff** - Linting
 - **pre-commit** - Git hooks for code quality (auto-runs black and ruff on commit)
@@ -158,6 +168,7 @@ pre-commit run --all-files  # Run hooks manually on all files
   - Include mathematical formulations using LaTeX
   - Provide interactive examples and visualisations
 
+- New pages import calculations from `quant_finance` rather than defining them, so they can be tested; older pages still define some inline
 - Pages are educational-focused, combining theory with practical Python implementations
 - Mathematical concepts are explained with both LaTeX formulations and code examples
 

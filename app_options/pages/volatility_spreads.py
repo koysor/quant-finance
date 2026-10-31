@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.pricing.black_scholes import black_scholes_call
+
 st.set_page_config(page_title="Volatility Spreads", page_icon="📈", layout="wide")
 st.header("Volatility Spreads")
 
@@ -622,16 +624,9 @@ elif strategy == "Calendar Spread":
     # Near-term option is at expiry (intrinsic value only)
     near_payoff = -np.maximum(stock_prices - strike, 0)  # Short call at expiry
 
-    # Far-term option still has time value (simplified Black-Scholes-like approximation)
+    # Far-term option still has time value
     remaining_time = 30 / 365  # Assume 30 days left on far option
-    d1 = (np.log(stock_prices / strike) + (0.05 + iv_far**2 / 2) * remaining_time) / (
-        iv_far * np.sqrt(remaining_time)
-    )
-    from scipy.stats import norm
-
-    far_value = stock_prices * norm.cdf(d1) - strike * np.exp(
-        -0.05 * remaining_time
-    ) * norm.cdf(d1 - iv_far * np.sqrt(remaining_time))
+    far_value = black_scholes_call(stock_prices, strike, remaining_time, 0.05, iv_far)
 
     payoff = near_payoff + far_value - net_debit
 
@@ -709,15 +704,8 @@ elif strategy == "Time Butterfly":
     stock_prices = np.linspace(strike * 0.7, strike * 1.3, 200)
 
     # Time butterfly approximation at mid-term expiry
-    from scipy.stats import norm
-
     remaining_time_far = 30 / 365
-    d1_far = (
-        np.log(stock_prices / strike) + (0.05 + iv**2 / 2) * remaining_time_far
-    ) / (iv * np.sqrt(remaining_time_far))
-    far_value = stock_prices * norm.cdf(d1_far) - strike * np.exp(
-        -0.05 * remaining_time_far
-    ) * norm.cdf(d1_far - iv * np.sqrt(remaining_time_far))
+    far_value = black_scholes_call(stock_prices, strike, remaining_time_far, 0.05, iv)
 
     # Near and mid are at expiry (intrinsic only)
     near_payoff = np.maximum(stock_prices - strike, 0)
@@ -796,19 +784,12 @@ elif strategy == "Diagonal Spreads":
     net_debit = far_premium - near_premium
     stock_prices = np.linspace(far_strike * 0.7, near_strike * 1.4, 200)
 
-    from scipy.stats import norm
-
     # At near-term expiry
     near_payoff = -np.maximum(stock_prices - near_strike, 0)
 
     # Far-term option still has time value
     remaining_time = 30 / 365
-    d1 = (np.log(stock_prices / far_strike) + (0.05 + iv**2 / 2) * remaining_time) / (
-        iv * np.sqrt(remaining_time)
-    )
-    far_value = stock_prices * norm.cdf(d1) - far_strike * np.exp(
-        -0.05 * remaining_time
-    ) * norm.cdf(d1 - iv * np.sqrt(remaining_time))
+    far_value = black_scholes_call(stock_prices, far_strike, remaining_time, 0.05, iv)
 
     payoff = near_payoff + far_value - net_debit
 

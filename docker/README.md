@@ -8,7 +8,7 @@ This directory contains Docker configurations for deploying the Quantitative Fin
 |-------------|------------|------|----------|-------------|
 | Quantitative Finance | `Dockerfile.quant-finance` | 8501 | `/quant/` | Stochastic processes, Greeks, volatility modelling, risk management |
 | Options | `Dockerfile.options` | 8502 | `/options/` | Options pricing models, binomial trees, Black-Scholes |
-| Fixed Income | `Dockerfile.fixed-income` | 8503 | `/fixed-income/` | Bond pricing and fixed income securities |
+| Fixed Income | `Dockerfile.fixed-income` | 8503 | `/fixed-income/` | Fixed income securities |
 | Portfolio Management | `Dockerfile.portfolio-management` | 8504 | `/portfolio/` | Modern Portfolio Theory, CAPM, alpha analysis |
 
 ## Live URLs

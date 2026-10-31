@@ -1,10 +1,26 @@
 # quant-finance
 
-This repository, `quant-finance`, serves as a comprehensive collection of Python code examples and tools for various quantitative finance applications. It encompasses modules dedicated to key areas such as fixed income analysis, options pricing and strategies, and portfolio management. The project aims to provide practical implementations of financial models and concepts, making complex quantitative methods accessible and understandable through code.
+Python implementations of quantitative finance models: a tested pricing and market data library, with interactive Streamlit apps and browser-based notebooks built around it.
 
-A significant feature of this repository is its integration with Streamlit, enabling users to interact with many of the quantitative finance tools via a user-friendly web application. This allows for immediate visualization and experimentation with financial models, from binomial trees for option pricing to Monte Carlo simulations for stock price forecasting. The Streamlit applications are structured around different financial domains, offering dedicated interfaces for each.
+## Repository Layout
 
-Beyond the interactive applications, the repository includes robust data ingestion capabilities, ensuring that the financial models can be fed with relevant and timely data. It also contains extensive unit tests to maintain code quality and accuracy, along with development configurations and Docker files to facilitate a consistent development and deployment environment. This makes `quant-finance` a valuable resource for both learning and applying quantitative finance principles.
+| Path | Contents |
+|------|----------|
+| [`projects/`](projects/README.md) | Self-contained projects, each with a question, results and limitations |
+| `src/quant_finance/` | Installable library: `pricing`, `options` and [`data_ingestion`](src/quant_finance/data_ingestion/README.md) |
+| `app_*/` | Streamlit apps for quantitative finance, options, fixed income and portfolio management |
+| `notebooks/` | Marimo notebooks exported to WebAssembly for GitHub Pages; `notebooks/local/` holds those that need live data |
+| `tests/` | pytest suite covering Black-Scholes pricing, option payoffs and the DuckDB cache |
+| `docker/` | Container images and the production deployment configuration |
+
+## Getting Started
+
+```bash
+uv sync                                # Install the library and its dependencies
+uv run pytest tests/                   # Run the tests
+uv run mypy src/quant_finance          # Check types
+./launch_options_streamlit_app.sh      # Launch an app
+```
 
 ## Key Technologies
 
@@ -32,21 +48,9 @@ Beyond the interactive applications, the repository includes robust data ingesti
 |------|---------|
 | **Jupyter / Marimo** | Interactive notebook environments for exploratory analysis |
 | **pytest** | Testing framework for code quality |
+| **mypy** | Static type checking for the library |
 | **Black / Ruff** | Code formatting and linting |
 | **pre-commit** | Git hooks for automated code quality checks |
-
-### CLI Tools
-
-| Tool | Purpose |
-|------|---------|
-| **[lazygit](https://github.com/jesseduffield/lazygit)** | Terminal UI for git commands — interactive staging, committing, branching, and more |
-| **[eza](https://github.com/eza-community/eza)** | Modern replacement for `ls` with colour-coded output, git integration, and tree view |
-| **[zoxide](https://github.com/ajeetdsouza/zoxide)** | Smarter `cd` command — learns your most-used directories for quick fuzzy navigation |
-| **[fzf](https://github.com/junegunn/fzf)** | General-purpose fuzzy finder — supercharges history search, file finding, and interactive selection |
-| **[ripgrep](https://github.com/BurntSushi/ripgrep)** | Blazing fast recursive code search — respects `.gitignore`, vastly faster than `grep` |
-| **[bat](https://github.com/sharkdp/bat)** | `cat` with syntax highlighting, line numbers, and git diff integration |
-| **[delta](https://github.com/dandavison/delta)** | Better git diffs — syntax highlighting, side-by-side view, and line numbers |
-| **[fd](https://github.com/sharkdp/fd)** | Simple, fast alternative to `find` — intuitive syntax, respects `.gitignore`, colour output |
 
 ## Live Streamlit Applications
 
@@ -74,8 +78,12 @@ These notebooks run entirely in your browser using WebAssembly (no server requir
 
 * [Distributions: Normal vs Lognormal](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html)
 * [Simulate Geometric Brownian Motion Paths](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html)
-* [S&amp;P 500 Data Ingestion](https://koysor.github.io/quant-finance/sp500_data_ingestion.html)
-* [YFinance Index Prices](https://koysor.github.io/quant-finance/yfinance_index_prices.html)
+
+Notebooks that fetch live market data can't run in the browser, so they are in `notebooks/local/`. Run one with:
+
+```bash
+uv run marimo edit notebooks/local/sp500_data_ingestion.py
+```
 
 ## Pre-commit Hooks
 

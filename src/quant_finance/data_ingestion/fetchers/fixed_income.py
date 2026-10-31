@@ -186,7 +186,7 @@ class FixedIncomeFetcher(BaseFetcher):
 
     def fetch_treasury_yields(
         self,
-        maturities: List[str] = None,
+        maturities: Optional[List[str]] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         use_cache: bool = True,

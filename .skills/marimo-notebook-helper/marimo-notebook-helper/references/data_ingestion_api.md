@@ -1,10 +1,10 @@
 # Data Ingestion API Reference
 
-Key fetchers available in `src.data_ingestion`.
+Key fetchers available in `quant_finance.data_ingestion`.
 
 ## EquityFetcher
 ```python
-from src.data_ingestion import EquityFetcher
+from quant_finance.data_ingestion import EquityFetcher
 
 fetcher = EquityFetcher()
 
@@ -23,7 +23,7 @@ info = fetcher.get_info("AAPL")  # returns dict
 
 ## OptionsFetcher
 ```python
-from src.data_ingestion import OptionsFetcher
+from quant_finance.data_ingestion import OptionsFetcher
 
 fetcher = OptionsFetcher()
 
@@ -41,7 +41,7 @@ calls_with_greeks = fetcher.fetch_greeks(
 
 ## FixedIncomeFetcher
 ```python
-from src.data_ingestion import FixedIncomeFetcher
+from quant_finance.data_ingestion import FixedIncomeFetcher
 
 fetcher = FixedIncomeFetcher()
 

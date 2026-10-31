@@ -14,7 +14,7 @@ Production-ready data ingestion package for quantitative finance applications. F
 ## Quick Start
 
 ```python
-from src.data_ingestion import EquityFetcher
+from quant_finance.data_ingestion import EquityFetcher
 
 # Fetch stock data with automatic caching
 fetcher = EquityFetcher()
@@ -46,7 +46,7 @@ Fetch historical stock prices, OHLCV data, real-time quotes, and company informa
 Fetches Open, High, Low, Close, Volume (and Adj Close) time series for any Yahoo Finance symbol — individual stocks, ETFs, and market indices.
 
 ```python
-from src.data_ingestion import EquityFetcher
+from quant_finance.data_ingestion import EquityFetcher
 
 fetcher = EquityFetcher()
 
@@ -234,7 +234,7 @@ Fetch options chains, available expirations, and implied volatility data from Ya
 List all available options expiration dates for a given symbol.
 
 ```python
-from src.data_ingestion import OptionsFetcher
+from quant_finance.data_ingestion import OptionsFetcher
 
 fetcher = OptionsFetcher()
 
@@ -334,7 +334,7 @@ Fetch US Treasury yields and yield curves from Yahoo Finance treasury indices.
 Fetch historical yield data for one or more maturities over a date range.
 
 ```python
-from src.data_ingestion import FixedIncomeFetcher
+from quant_finance.data_ingestion import FixedIncomeFetcher
 
 fetcher = FixedIncomeFetcher()
 
@@ -432,7 +432,7 @@ df2 = fetcher.fetch_historical("AAPL", "2024-01-01", "2024-12-31")
 ### Cache Management
 
 ```python
-from src.data_ingestion import CacheManager
+from quant_finance.data_ingestion import CacheManager
 
 manager = CacheManager()
 
@@ -491,7 +491,7 @@ export QUANT_FINANCE_VALIDATE_DATA=true
 ### Programmatic Configuration
 
 ```python
-from src.data_ingestion import DataIngestionConfig, EquityFetcher
+from quant_finance.data_ingestion import DataIngestionConfig, EquityFetcher
 
 # Custom configuration
 config = DataIngestionConfig(
@@ -537,7 +537,7 @@ fetcher = EquityFetcher(config=config)
 
 ```python
 import streamlit as st
-from src.data_ingestion.streamlit_helpers import (
+from quant_finance.data_ingestion.streamlit_helpers import (
     get_stock_data,
     get_options_chain,
     get_treasury_yields,
@@ -568,7 +568,7 @@ if df is not None:
 
 ```python
 import streamlit as st
-from src.data_ingestion.streamlit_helpers import (
+from quant_finance.data_ingestion.streamlit_helpers import (
     create_stock_data_widget,
     create_options_widget,
     format_market_data_summary,
@@ -600,7 +600,7 @@ if result:
 ### Custom Caching Decorator
 
 ```python
-from src.data_ingestion.streamlit_helpers import st_cache_data_ingestion
+from quant_finance.data_ingestion.streamlit_helpers import st_cache_data_ingestion
 
 
 @st_cache_data_ingestion(ttl=3600, show_spinner=True)
@@ -626,7 +626,7 @@ DataIngestionError (base)
 ```
 
 ```python
-from src.data_ingestion import (
+from quant_finance.data_ingestion import (
     EquityFetcher,
     SymbolNotFoundError,
     ValidationError,
@@ -672,7 +672,7 @@ for symbol in ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]:
 ### Manual Rate Limiter Usage
 
 ```python
-from src.data_ingestion.utils.rate_limiter import TokenBucketLimiter
+from quant_finance.data_ingestion.utils.rate_limiter import TokenBucketLimiter
 
 limiter = TokenBucketLimiter(tokens_per_second=2.0, bucket_size=10)
 
@@ -711,7 +711,7 @@ Automatic data quality validation is applied to all fetched data:
 ### Manual Validation
 
 ```python
-from src.data_ingestion.utils.validators import DataValidator
+from quant_finance.data_ingestion.utils.validators import DataValidator
 
 # Validate a DataFrame directly
 is_valid = DataValidator.validate_equity_data(df, strict=True)
@@ -736,7 +736,7 @@ DataValidator.validate_interval("2d")  # False
 ### Custom Retry Strategy
 
 ```python
-from src.data_ingestion.utils.retry import ExponentialBackoffRetry
+from quant_finance.data_ingestion.utils.retry import ExponentialBackoffRetry
 
 retry_strategy = ExponentialBackoffRetry(
     max_retries=5, base_delay=2.0, max_delay=120.0, exponential_base=2.0
@@ -804,7 +804,7 @@ A complete reference of every data item available through the package, with corr
 ## Package Structure
 
 ```
-src/data_ingestion/
+src/quant_finance/data_ingestion/
 ├── __init__.py                 # Package exports
 ├── config.py                   # Configuration management (DataIngestionConfig)
 ├── exceptions.py               # Custom exception hierarchy
@@ -844,13 +844,13 @@ src/data_ingestion/
 
 ```python
 # Check cache location
-from src.data_ingestion import get_default_config
+from quant_finance.data_ingestion import get_default_config
 
 config = get_default_config()
 print(f"Cache location: {config.cache_db_path}")
 
 # Clear cache if corrupted
-from src.data_ingestion import CacheManager
+from quant_finance.data_ingestion import CacheManager
 
 manager = CacheManager()
 manager.invalidate_all(confirm=True)
@@ -860,7 +860,7 @@ manager.invalidate_all(confirm=True)
 
 ```python
 # Reduce request rate
-from src.data_ingestion import DataIngestionConfig, EquityFetcher
+from quant_finance.data_ingestion import DataIngestionConfig, EquityFetcher
 
 config = DataIngestionConfig(rate_limit_per_second=1.0)
 fetcher = EquityFetcher(config=config)
@@ -870,7 +870,7 @@ fetcher = EquityFetcher(config=config)
 
 ```python
 # Allow partial / incomplete data
-from src.data_ingestion import DataIngestionConfig, EquityFetcher
+from quant_finance.data_ingestion import DataIngestionConfig, EquityFetcher
 
 config = DataIngestionConfig(allow_partial_data=True)
 fetcher = EquityFetcher(config=config)
@@ -880,7 +880,7 @@ fetcher = EquityFetcher(config=config)
 
 ```python
 # Verify the symbol is valid
-from src.data_ingestion.utils.validators import DataValidator
+from quant_finance.data_ingestion.utils.validators import DataValidator
 
 print(DataValidator.validate_symbol("AAPL"))  # True
 
@@ -892,24 +892,28 @@ print(DataValidator.validate_symbol("AAPL"))  # True
 
 ## Exports Reference
 
-All public exports from `src.data_ingestion`:
+All public exports from `quant_finance.data_ingestion`:
 
 ```python
 # Configuration
-from src.data_ingestion import (
+from quant_finance.data_ingestion import (
     DataIngestionConfig,
     get_default_config,
     set_default_config,
 )
 
 # Fetchers
-from src.data_ingestion import EquityFetcher, OptionsFetcher, FixedIncomeFetcher
+from quant_finance.data_ingestion import (
+    EquityFetcher,
+    OptionsFetcher,
+    FixedIncomeFetcher,
+)
 
 # Cache
-from src.data_ingestion import DuckDBCache, CacheManager, create_cache_manager
+from quant_finance.data_ingestion import DuckDBCache, CacheManager, create_cache_manager
 
 # Exceptions
-from src.data_ingestion import (
+from quant_finance.data_ingestion import (
     DataIngestionError,
     FetchError,
     CacheError,
@@ -920,7 +924,7 @@ from src.data_ingestion import (
 )
 
 # Utilities
-from src.data_ingestion import (
+from quant_finance.data_ingestion import (
     DataValidator,
     TokenBucketLimiter,
     ExponentialBackoffRetry,
