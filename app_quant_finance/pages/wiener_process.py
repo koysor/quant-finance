@@ -1,10 +1,11 @@
 import inspect
 
 import streamlit as st
-import streamlit.components.v1 as components
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+
+from quant_finance.stochastic.paths import wiener_paths
 
 st.set_page_config(page_title="Wiener Process", page_icon="📊", layout="wide")
 st.header("Wiener Process")
@@ -57,18 +58,6 @@ with asset_desc_col:
 st.divider()
 
 # --- Simulation functions ---
-
-
-def simulate_paths(n_paths, n_steps, T, seed):
-    np.random.seed(seed)
-    dt = T / n_steps
-    t = np.linspace(0, T, n_steps + 1)
-    # Draw independent N(0, dt) increments
-    dW = np.random.normal(0, np.sqrt(dt), (n_paths, n_steps))
-    # Accumulate increments to form paths W(t)
-    W = np.zeros((n_paths, n_steps + 1))
-    W[:, 1:] = np.cumsum(dW, axis=1)
-    return t, W
 
 
 def compute_bounds(t):
@@ -142,7 +131,7 @@ run = st.button("Run Simulation")
 st.markdown("**Simulating the increments**")
 code_col, info_col = st.columns(2)
 with code_col:
-    st.code(inspect.getsource(simulate_paths), language="python")
+    st.code(inspect.getsource(wiener_paths), language="python")
 with info_col:
     st.info(
         "**What it does:** Generates `n_paths` independent realisations of a Wiener process over the interval [0, T].\n\n"
@@ -191,7 +180,8 @@ with info_col:
 
 if run:
     with st.spinner("Running simulation..."):
-        t, W = simulate_paths(n_paths, n_steps, T, seed)
+        t = np.linspace(0, T, n_steps + 1)
+        W = wiener_paths(T, n_steps, n_paths, np.random.default_rng(seed))
         std_bounds = compute_bounds(t)
         final_values, empirical_mean, empirical_std, theoretical_std = (
             compute_convergence(W, T)
@@ -271,9 +261,9 @@ if run:
 
     st.markdown('<div id="simulation-results"></div>', unsafe_allow_html=True)
     st.pyplot(fig)
-    components.html(
-        "<script>document.getElementById('simulation-results').scrollIntoView({behavior: 'smooth'});</script>",
-        height=0,
+    st.iframe(
+        "<script>window.parent.document.getElementById('simulation-results').scrollIntoView({behavior: 'smooth'});</script>",
+        height=1,
     )
 
     # Summary metrics

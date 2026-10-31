@@ -77,8 +77,10 @@ docker-compose up --build
 
 **Core Library** (`src/quant_finance/`)
 - `data_ingestion/` - Financial data fetching with DuckDB caching and rate limiting
-- `options/` - Option payoff calculations
-- `pricing/` - Pricing models (Black-Scholes)
+- `options/` - Option and multi-leg strategy payoffs
+- `portfolio/` - Modern Portfolio Theory and CAPM
+- `pricing/` - Pricing models (Black-Scholes) and put-call parity
+- `stochastic/` - Simulated paths (GBM, Wiener process, random walk)
 
 **Other directories**
 - `projects/` - Portfolio projects (see `projects/README.md`)

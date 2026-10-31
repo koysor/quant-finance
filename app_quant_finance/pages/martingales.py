@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.stochastic.paths import random_walk_paths
+
 st.set_page_config(page_title="Martingales", page_icon="🎲", layout="wide")
 st.header("Martingales")
 
@@ -47,15 +49,10 @@ with col2:
     )
 
 if st.button("Run Simulation"):
-    # Generate random steps: +1 with prob p, -1 with prob 1-p
-    steps = np.random.choice(
-        [1, -1], size=(n_simulations, n_steps), p=[win_prob, 1 - win_prob]
+    # Random steps: +1 with prob p, -1 with prob 1-p
+    paths = random_walk_paths(
+        initial_wealth, win_prob, n_steps, n_simulations, np.random.default_rng()
     )
-
-    # Calculate paths by taking cumulative sum
-    paths = np.zeros((n_simulations, n_steps + 1))
-    paths[:, 0] = initial_wealth
-    paths[:, 1:] = initial_wealth + np.cumsum(steps, axis=1)
 
     time = np.arange(n_steps + 1)
 

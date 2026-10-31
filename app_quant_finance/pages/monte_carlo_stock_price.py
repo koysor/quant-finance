@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.stochastic.paths import gbm_paths
+
 st.set_page_config(
     page_title="Monte Carlo Simulation - Stock Price Random Walk",
     page_icon="📊",
@@ -81,29 +83,19 @@ with col2:
 # Generate Monte Carlo simulations
 if st.button("Run Monte Carlo Simulation"):
     # Time parameters
-    dt = T / n_steps
     t = np.linspace(0, T, n_steps + 1)
 
-    # Initialize price matrix
-    prices = np.zeros((n_simulations, n_steps + 1))
-    prices[:, 0] = S0
-
-    # Generate random numbers
-    np.random.seed(42)  # For reproducibility
-    random_shocks = np.random.normal(0, 1, (n_simulations, n_steps))
+    rng = np.random.default_rng(42)  # For reproducibility
 
     # Simulate price paths
-    for i in range(n_steps):
-        prices[:, i + 1] = prices[:, i] * np.exp(
-            (mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * random_shocks[:, i]
-        )
+    prices = gbm_paths(S0, mu, sigma, T, n_steps, n_simulations, rng)
 
     # Create visualization
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     # Plot 1: Sample of price paths
     sample_size = min(100, n_simulations)
-    sample_indices = np.random.choice(n_simulations, sample_size, replace=False)
+    sample_indices = rng.choice(n_simulations, sample_size, replace=False)
 
     for idx in sample_indices:
         ax1.plot(t, prices[idx, :], alpha=0.3, linewidth=0.8, color="steelblue")
@@ -185,17 +177,28 @@ if st.button("Run Monte Carlo Simulation"):
 
     returns = (final_prices - S0) / S0
     prob_loss = np.sum(final_prices < S0) / n_simulations * 100
-    var_95 = np.percentile(final_prices, 5)
-    var_99 = np.percentile(final_prices, 1)
+    # VaR is the loss from S0 at the given percentile of final prices
+    var_95 = S0 - np.percentile(final_prices, 5)
+    var_99 = S0 - np.percentile(final_prices, 1)
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.metric("Probability of Loss", f"{prob_loss:.1f}%")
-        st.metric("Value at Risk (95%)", f"£{var_95:.2f}")
+        st.metric(
+            "Value at Risk (95%)",
+            f"£{var_95:.2f}",
+            help="The loss from the initial price over the time horizon that is "
+            "exceeded in only 5% of simulations.",
+        )
 
     with col2:
-        st.metric("Value at Risk (99%)", f"£{var_99:.2f}")
+        st.metric(
+            "Value at Risk (99%)",
+            f"£{var_99:.2f}",
+            help="The loss from the initial price over the time horizon that is "
+            "exceeded in only 1% of simulations.",
+        )
         st.metric("Expected Return", f"{np.mean(returns) * 100:.2f}%")
 
 st.markdown("#### Summary")

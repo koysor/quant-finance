@@ -45,7 +45,12 @@ select = ["E4", "E7", "E9", "F"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "quant_finance.pricing.*"
+module = [
+    "quant_finance.options.*",
+    "quant_finance.portfolio.*",
+    "quant_finance.pricing.*",
+    "quant_finance.stochastic.*",
+]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_any_generics = true

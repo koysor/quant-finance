@@ -7,10 +7,10 @@ Python implementations of quantitative finance models: a tested pricing and mark
 | Path | Contents |
 |------|----------|
 | [`projects/`](projects/README.md) | Self-contained projects, each with a question, results and limitations |
-| `src/quant_finance/` | Installable library: `pricing`, `options` and [`data_ingestion`](src/quant_finance/data_ingestion/README.md) |
+| `src/quant_finance/` | Installable library: `pricing`, `options`, `portfolio`, `stochastic` and [`data_ingestion`](src/quant_finance/data_ingestion/README.md) |
 | `app_*/` | Streamlit apps for quantitative finance, options, fixed income and portfolio management |
 | `notebooks/` | Marimo notebooks exported to WebAssembly for GitHub Pages; `notebooks/local/` holds those that need live data |
-| `tests/` | pytest suite covering Black-Scholes pricing, option payoffs and the DuckDB cache |
+| `tests/` | pytest suite covering the pricing, options, portfolio and stochastic modules, the DuckDB cache and the published notebooks |
 | `docker/` | Container images and the production deployment configuration |
 
 ## Getting Started

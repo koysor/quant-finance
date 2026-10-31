@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from quant_finance.pricing.black_scholes import black_scholes_call, black_scholes_put
+from quant_finance.pricing.parity import implied_call, implied_put, parity_difference
 
 st.set_page_config(page_title="Put-Call Parity", page_icon="📈", layout="wide")
 st.header("Put-Call Parity")
@@ -252,10 +253,10 @@ with col_arb3:
 PV_K = K_arb * np.exp(-r_arb * T_arb)
 left_side = C_market + PV_K  # Portfolio A value
 right_side = P_market + S0_arb  # Portfolio B value
-difference = left_side - right_side
+difference = parity_difference(C_market, P_market, S0_arb, K_arb, T_arb, r_arb)
 
-C_implied = P_market + S0_arb - PV_K
-P_implied = C_market + PV_K - S0_arb
+C_implied = implied_call(P_market, S0_arb, K_arb, T_arb, r_arb)
+P_implied = implied_put(C_market, S0_arb, K_arb, T_arb, r_arb)
 
 tolerance = 0.10
 
@@ -711,8 +712,8 @@ with col_div2:
 
 PV_K_div = K_div * np.exp(-r_div * T_div)
 S_adj = S0_div * np.exp(-q_div * T_div)
-P_implied_div = C_div + PV_K_div - S_adj
-P_implied_no_div = C_div + PV_K_div - S0_div
+P_implied_div = implied_put(C_div, S0_div, K_div, T_div, r_div, q=q_div)
+P_implied_no_div = implied_put(C_div, S0_div, K_div, T_div, r_div)
 
 col_divr1, col_divr2 = st.columns(2)
 
