@@ -33,16 +33,16 @@ uv run pytest tests/test_option_payoffs.py::test_name -v
 ### Code Quality
 ```bash
 # Format code (auto-fix)
-black .
+uv run black .
 
 # Lint code (auto-fix enabled via pre-commit)
-ruff check . --fix
+uv run ruff check . --fix
 
 # Format with ruff
-ruff format .
+uv run ruff format .
 
 # Run pre-commit hooks manually
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ### Running Applications
@@ -87,8 +87,14 @@ docker-compose up --build
 - `notebooks/` - Marimo notebooks
 
 **Testing** (`tests/`)
-- Currently minimal; `test_option_payoffs.py` covers options payoff calculations
-- Pytest-based structure with standard fixture patterns
+- Pytest coverage includes pricing, option payoffs, put-call parity, portfolio
+  calculations, stochastic paths, DuckDB caching, and published notebooks.
+- Select a single test file or node with pytest, for example:
+
+  ```bash
+  uv run pytest tests/test_option_payoffs.py -v
+  uv run pytest tests/test_option_payoffs.py::test_name -v
+  ```
 
 ### Key Design Patterns
 
@@ -206,8 +212,16 @@ Pre-commit hooks run locally on commit:
 
 ## Important Notes
 
-- **Limited Test Coverage:** While a testing framework is in place (using `pytest`, as seen in `tests/` and `.github/workflows/tests.yml`), test coverage is currently limited to option payoffs. Adding tests is strongly encouraged for new features and existing modules.
+- **Keep reusable calculations in `src/quant_finance/`** and keep Streamlit
+  pages focused on explanations, widgets, and visualisation.
 - **Docker images** exclude dev dependencies; only runtime packages are installed
 - **Data caching** is critical for performance; always check `src/quant_finance/data_ingestion/` before adding new data fetching logic
 - **Streamlit state management** can be tricky; use `st.session_state` carefully and document non-obvious state dependencies
 - **Port mappings for Docker:** 8501 (Quant), 8502 (Options), 8503 (Fixed Income), 8504 (Portfolio)
+
+## Notebook publishing constraint
+
+The notebooks in `notebooks/` are exported to run in the browser through
+WebAssembly. They must not import `quant_finance` or fetch live data;
+`tests/test_notebooks.py` checks this. Keep notebooks that need the library or
+network access under `notebooks/local/`.
