@@ -73,20 +73,20 @@ source .venv/bin/activate && uv run streamlit run app_portfolio_management/portf
 ### Code Quality
 ```bash
 # Format code
-black .
+uv run black .
 
 # Lint code
-ruff check .
+uv run ruff check .
 
 # Format check (matches CI)
-ruff format .
+uv run ruff format .
 
 # Type check the library (matches CI)
 uv run mypy src/quant_finance
 
 # Pre-commit hooks (automatically runs black, ruff check, and ruff format on commit)
-pre-commit install        # Setup hooks (already done)
-pre-commit run --all-files  # Run hooks manually on all files
+uv run pre-commit install        # Setup hooks (already done)
+uv run pre-commit run --all-files  # Run hooks manually on all files
 ```
 
 ### CI/CD

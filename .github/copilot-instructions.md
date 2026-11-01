@@ -41,6 +41,9 @@ uv run ruff check . --fix
 # Format with ruff
 uv run ruff format .
 
+# Type check the library
+uv run mypy src/quant_finance
+
 # Run pre-commit hooks manually
 uv run pre-commit run --all-files
 ```
@@ -61,7 +64,7 @@ uv run streamlit run app_options/options.py
 ### Docker
 ```bash
 # Run all apps via Docker Compose
-docker-compose up --build
+docker-compose -f docker/docker-compose.yml up --build
 # Apps available at localhost:8501-8504
 ```
 
@@ -104,7 +107,7 @@ docker-compose up --build
   1. `st.set_page_config(layout="wide")` at top
   2. Markdown title and explanation with LaTeX
   3. Streamlit widgets (sliders, inputs) for interactivity
-  4. Mathematical calculations using numpy/scipy
+  4. Calculations imported from `quant_finance`
   5. Matplotlib visualisations for output
 - Pages are auto-discovered and added to navigation menu (no manual routing)
 
@@ -143,7 +146,7 @@ Common conversions:
 | recognize | recognise |
 
 This applies to:
-- Variable and function names (e.g., `calculate_volatility` not `calculate_volatility`)
+- Variable and function names (e.g., `normalise_returns` not `normalize_returns`)
 - Comments and docstrings
 - Markdown documentation and error messages
 - User-facing text in Streamlit pages
@@ -153,8 +156,8 @@ This applies to:
 - **Financial data:** yfinance
 - **Visualisation:** matplotlib, networkx
 - **Web framework:** streamlit
-- **Development:** black, ruff, pytest, pre-commit (in `[dependency-groups.dev]`)
-- **Database:** duckdb for caching, sqlglot for SQL handling
+- **Development:** black, ruff, mypy, pytest, pre-commit (in `[dependency-groups.dev]`)
+- **Database:** duckdb for caching
 
 ### Code Style
 - **Formatting:** Black (line length 88)
@@ -171,7 +174,7 @@ This applies to:
 ### Streamlit Page Structure
 ```python
 import streamlit as st
-# other imports...
+# other imports, including calculations from quant_finance...
 
 st.set_page_config(layout="wide")
 st.markdown("### Page Title")
@@ -182,7 +185,7 @@ st.markdown(r"$$formula$$")
 # Interactive widgets
 param = st.slider("Parameter", min_value, max_value)
 
-# Calculations
+# Calculations (defined in quant_finance so they can be tested)
 result = calculate(param)
 
 # Visualisation
@@ -200,7 +203,7 @@ st.pyplot(fig)
 ## CI/CD
 
 **GitHub Actions Workflows:**
-- **code-quality.yml** - Validates Black formatting and Ruff linting on push/PR
+- **code-quality.yml** - Validates Black formatting, Ruff linting, Ruff formatting and mypy types on push/PR
 - **tests.yml** - Runs pytest suite on push/PR to main
 - **deploy-ec2.yml** - Deploys applications to AWS EC2
 - **deploy-marimo.yml** - Deploys Marimo notebooks to GitHub Pages
