@@ -34,7 +34,8 @@ jobs:
           mkdir -p _site
           for notebook in notebooks/*.py; do
             name=$(basename "$notebook" .py)
-            uv run marimo export html-wasm "$notebook" -o "_site/${name}.html" --mode edit
+            uv run marimo export html-wasm "$notebook" -o "_site/${name}.html" --mode run
+            uv run marimo export html-wasm "$notebook" -o "_site/${name}-edit.html" --mode edit
           done
 
       - name: Create index page
@@ -62,7 +63,7 @@ jobs:
           for notebook in notebooks/*.py; do
             name=$(basename "$notebook" .py)
             title=$(echo "$name" | tr '_' ' ' | sed 's/.*/\u&/')
-            echo "      <li><a href=\"${name}.html\">${title}</a></li>" >> _site/index.html
+            echo "      <li>${title}: <a href=\"${name}.html\">View</a> &middot; <a href=\"${name}-edit.html\">Edit code</a></li>" >> _site/index.html
           done
           cat >> _site/index.html << 'EOF'
             </ul>

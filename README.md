@@ -74,10 +74,10 @@ Uptime and availability for all live Streamlit applications is tracked via Uptim
 
 Interactive Python notebooks are available via GitHub Pages at **https://koysor.github.io/quant-finance/**
 
-These notebooks run entirely in your browser using WebAssembly (no server required) and allow you to view, edit, and execute the code directly:
+These notebooks run entirely in your browser using WebAssembly (no server required). Each one is published in two versions: **view** is a read-only page showing only the outputs and interactive widgets, and **edit code** shows the Python code and lets you change and re-run it (changes are kept only in your browser):
 
-* [Distributions: Normal vs Lognormal](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html)
-* [Simulate Geometric Brownian Motion Paths](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html)
+* Distributions: Normal vs Lognormal ([view](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html) · [edit code](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal-edit.html))
+* Simulate Geometric Brownian Motion Paths ([view](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html) · [edit code](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths-edit.html))
 
 Notebooks that fetch live market data can't run in the browser, so they are in `notebooks/local/`. Run one with:
 
