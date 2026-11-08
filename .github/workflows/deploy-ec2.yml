@@ -138,117 +138,143 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Set up SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          # Plain OpenSSH from the runner image: nothing is downloaded at run time,
+          # so an outage of GitHub release downloads cannot break the deploy.
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2
+          chmod 600 ~/.ssh/ec2
+          cat >> ~/.ssh/config <<EOF
+          Host ec2
+            HostName $EC2_HOST
+            User ec2-user
+            IdentityFile ~/.ssh/ec2
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+            ConnectionAttempts 3
+            ServerAliveInterval 30
+            ServerAliveCountMax 4
+          EOF
+
       - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          command_timeout: 30m
-          script: |
-            set -e
+        timeout-minutes: 30
+        run: |
+          # Sent as the ssh command (not on stdin), like appleboy/ssh-action
+          # did; -n gives the remote side an empty stdin for docker exec.
+          script=$(cat <<'REMOTE'
+          set -e
 
-            # Clone or update repository (for docker-compose and Caddyfile)
-            cd ~/quant-finance || git clone https://github.com/koysor/quant-finance.git ~/quant-finance
-            cd ~/quant-finance
-            git fetch origin
-            git reset --hard origin/main
+          # Clone or update repository (for docker-compose and Caddyfile)
+          cd ~/quant-finance || git clone https://github.com/koysor/quant-finance.git ~/quant-finance
+          cd ~/quant-finance
+          git fetch origin
+          git reset --hard origin/main
 
-            # Stop existing containers (both named project and legacy 'docker' project)
-            cd docker
-            docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
-            docker-compose -p docker -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
-            docker-compose down --remove-orphans 2>/dev/null || true
-            cd ..
+          # Stop existing containers (both named project and legacy 'docker' project)
+          cd docker
+          docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+          docker-compose -p docker -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+          docker-compose down --remove-orphans 2>/dev/null || true
+          cd ..
 
-            # Stop nginx if previously installed (Caddy now handles reverse proxy)
-            sudo systemctl stop nginx 2>/dev/null || true
-            sudo systemctl disable nginx 2>/dev/null || true
+          # Stop nginx if previously installed (Caddy now handles reverse proxy)
+          sudo systemctl stop nginx 2>/dev/null || true
+          sudo systemctl disable nginx 2>/dev/null || true
 
-            # Ensure Caddy certificate volume exists (survives prune)
-            docker volume create caddy_data 2>/dev/null || true
+          # Ensure Caddy certificate volume exists (survives prune)
+          docker volume create caddy_data 2>/dev/null || true
 
-            # Cleanup to free disk space before pulling
-            # Note: no --volumes flag so caddy_data (external) is preserved
-            docker system prune -af || true
-            docker builder prune -af || true
-            sudo rm -rf /tmp/* 2>/dev/null || true
+          # Cleanup to free disk space before pulling
+          # Note: no --volumes flag so caddy_data (external) is preserved
+          docker system prune -af || true
+          docker builder prune -af || true
+          sudo rm -rf /tmp/* 2>/dev/null || true
 
-            # Pull base image first (app images share its layers)
-            docker pull ghcr.io/koysor/quant-finance/base:latest
+          # Pull base image first (app images share its layers)
+          docker pull ghcr.io/koysor/quant-finance/base:latest
 
-            # Pull app images (fast - only the thin app layers need downloading)
-            docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
-            docker pull ghcr.io/koysor/quant-finance/options:latest
-            docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
-            docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
-            docker pull caddy:2-alpine
+          # Pull app images (fast - only the thin app layers need downloading)
+          docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
+          docker pull ghcr.io/koysor/quant-finance/options:latest
+          docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
+          docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+          docker pull caddy:2-alpine
 
-            # Pull maths-python image (prune -af removes it since it runs outside this compose project)
-            docker pull ghcr.io/koysor/maths-python:latest
+          # Pull maths-python image (prune -af removes it since it runs outside this compose project)
+          docker pull ghcr.io/koysor/maths-python:latest
 
-            # Pull flash cards image (same reason: it runs in its own compose project)
-            docker pull ghcr.io/koysor/quant-finance-flash-cards:latest || true
+          # Pull flash cards image (same reason: it runs in its own compose project)
+          docker pull ghcr.io/koysor/quant-finance-flash-cards:latest || true
 
-            # Start services with new images
+          # Start services with new images
+          cd docker
+          docker-compose -f docker-compose.prod.yml up -d
+
+          # Restart maths-python (separate compose project, destroyed by prune -af)
+          cd ~/maths-python 2>/dev/null && git fetch origin && git reset --hard origin/main || git clone https://github.com/koysor/maths-python.git ~/maths-python
+          cd ~/maths-python/docker
+          docker-compose -f docker-compose.prod.yml up -d
+
+          # Restart flash cards, only once it has been set up on this host (docker/.env exists)
+          if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
+            cd ~/quant-finance-flash-cards && git fetch origin && git reset --hard origin/main
             cd docker
             docker-compose -f docker-compose.prod.yml up -d
-
-            # Restart maths-python (separate compose project, destroyed by prune -af)
-            cd ~/maths-python 2>/dev/null && git fetch origin && git reset --hard origin/main || git clone https://github.com/koysor/maths-python.git ~/maths-python
-            cd ~/maths-python/docker
-            docker-compose -f docker-compose.prod.yml up -d
-
-            # Restart flash cards, only once it has been set up on this host (docker/.env exists)
-            if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
-              cd ~/quant-finance-flash-cards && git fetch origin && git reset --hard origin/main
-              cd docker
-              docker-compose -f docker-compose.prod.yml up -d
-            fi
+          fi
+          REMOTE
+          )
+          ssh -n ec2 "$script"
 
       - name: Health check
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
-            echo "Waiting for apps and Caddy to start..."
-            sleep 45
+        timeout-minutes: 10
+        run: |
+          # Sent as the ssh command (not on stdin), like appleboy/ssh-action
+          # did; -n gives the remote side an empty stdin for docker exec.
+          script=$(cat <<'REMOTE'
+          set -e
+          echo "Waiting for apps and Caddy to start..."
+          sleep 45
 
-            # Verify all containers are running (including Caddy)
-            SERVICES="quant-finance options fixed-income portfolio-management caddy"
-            for service in $SERVICES; do
-              if ! docker ps | grep -q "$service"; then
-                echo "Container $service is not running!"
-                docker logs quant-finance-${service}-1 2>/dev/null || docker logs ${service} 2>/dev/null || true
-                exit 1
-              fi
-            done
-
-            # Check Streamlit health endpoints via docker exec
-            cd ~/quant-finance/docker
-            docker-compose -f docker-compose.prod.yml exec -T quant-finance curl -f http://localhost:8501/_stcore/health && echo " Quant Finance OK"
-            docker-compose -f docker-compose.prod.yml exec -T options curl -f http://localhost:8501/_stcore/health && echo " Options OK"
-            docker-compose -f docker-compose.prod.yml exec -T fixed-income curl -f http://localhost:8501/_stcore/health && echo " Fixed Income OK"
-            docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f http://localhost:8501/_stcore/health && echo " Portfolio OK"
-
-            # Check maths-python health endpoint
-            cd ~/maths-python/docker
-            docker-compose -f docker-compose.prod.yml exec -T maths-python curl -f http://localhost:8501/maths/_stcore/health && echo " Maths Python OK"
-
-            # Check flash cards health endpoint (skipped until it has been set up on this host)
-            if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
-              cd ~/quant-finance-flash-cards/docker
-              docker-compose -f docker-compose.prod.yml exec -T flashcards curl -f http://localhost:8000/ > /dev/null && echo " Flash Cards OK"
+          # Verify all containers are running (including Caddy)
+          SERVICES="quant-finance options fixed-income portfolio-management caddy"
+          for service in $SERVICES; do
+            if ! docker ps | grep -q "$service"; then
+              echo "Container $service is not running!"
+              docker logs quant-finance-${service}-1 2>/dev/null || docker logs ${service} 2>/dev/null || true
+              exit 1
             fi
+          done
 
-            # Check Caddy is responding on port 80
-            curl -sf -o /dev/null http://localhost:80 && echo " Caddy HTTP OK"
+          # Check Streamlit health endpoints via docker exec
+          cd ~/quant-finance/docker
+          docker-compose -f docker-compose.prod.yml exec -T quant-finance curl -f http://localhost:8501/_stcore/health && echo " Quant Finance OK"
+          docker-compose -f docker-compose.prod.yml exec -T options curl -f http://localhost:8501/_stcore/health && echo " Options OK"
+          docker-compose -f docker-compose.prod.yml exec -T fixed-income curl -f http://localhost:8501/_stcore/health && echo " Fixed Income OK"
+          docker-compose -f docker-compose.prod.yml exec -T portfolio-management curl -f http://localhost:8501/_stcore/health && echo " Portfolio OK"
 
-            echo "All health checks passed!"
+          # Check maths-python health endpoint
+          cd ~/maths-python/docker
+          docker-compose -f docker-compose.prod.yml exec -T maths-python curl -f http://localhost:8501/maths/_stcore/health && echo " Maths Python OK"
+
+          # Check flash cards health endpoint (skipped until it has been set up on this host)
+          if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
+            cd ~/quant-finance-flash-cards/docker
+            docker-compose -f docker-compose.prod.yml exec -T flashcards curl -f http://localhost:8000/ > /dev/null && echo " Flash Cards OK"
+          fi
+
+          # Check Caddy is responding on port 80
+          curl -sf -o /dev/null http://localhost:80 && echo " Caddy HTTP OK"
+
+          echo "All health checks passed!"
+          REMOTE
+          )
+          ssh -n ec2 "$script"
 
       - name: Deployment summary
         run: |

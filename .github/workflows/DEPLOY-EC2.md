@@ -252,23 +252,53 @@ Pull requests don't trigger deployment—you don't want untested code in product
 
 ### SSH Deployment
 
+The workflow uses the OpenSSH client that is already installed on the GitHub runner, not a third-party SSH action. A "Set up SSH" step writes the key and an `ec2` host alias to `~/.ssh/config`:
+
 ```yaml
-- uses: appleboy/ssh-action@v1.0.3
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ec2-user
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script_stop: true
-    command_timeout: 30m
+- name: Set up SSH
+  env:
+    EC2_HOST: ${{ secrets.EC2_HOST }}
+    EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+  run: |
+    install -m 700 -d ~/.ssh
+    printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2
+    chmod 600 ~/.ssh/ec2
+    cat >> ~/.ssh/config <<EOF
+    Host ec2
+      HostName $EC2_HOST
+      User ec2-user
+      IdentityFile ~/.ssh/ec2
+      ...
+    EOF
 ```
 
-| Parameter | Purpose |
+Each remote step then sends its script as the ssh command:
+
+```yaml
+- name: Deploy to EC2 via SSH
+  timeout-minutes: 30
+  run: |
+    script=$(cat <<'REMOTE'
+    set -e
+    ...
+    REMOTE
+    )
+    ssh -n ec2 "$script"
+```
+
+| Setting | Purpose |
 |-----------|---------|
-| `host` | EC2 IP address (stored as secret) |
-| `username` | `ec2-user` (default for Amazon Linux) |
-| `key` | SSH private key (stored as secret) |
-| `script_stop: true` | Stop on first error |
-| `command_timeout: 30m` | Allow time for image pulls |
+| `EC2_HOST`, `EC2_SSH_KEY` | EC2 address and SSH private key, stored as secrets and passed via `env` |
+| `User ec2-user` | Default user for Amazon Linux |
+| `BatchMode yes` | Fail instead of prompting |
+| `StrictHostKeyChecking accept-new` | Trust the host key on first contact |
+| `ConnectTimeout 30`, `ConnectionAttempts 3` | Retry a flaky connection |
+| `ServerAliveInterval 30`, `ServerAliveCountMax 4` | Drop a dead connection instead of hanging |
+| `set -e` | Stop on first error |
+| `timeout-minutes: 30` | Allow time for image pulls |
+| `ssh -n` | Give the remote side an empty stdin, so `docker-compose exec` cannot consume the script |
+
+**Why not `appleboy/ssh-action`:** it downloads its `drone-ssh` binary from GitHub releases on every run, so an outage of GitHub's release downloads fails the deploy before it reaches the server. That happened to maths-python on 2026-11-08 (HTTP 504). The runner's own `ssh` needs no download.
 
 **Best practice:** Store sensitive values (IP, SSH key) as GitHub Secrets, not in the workflow file.
 
