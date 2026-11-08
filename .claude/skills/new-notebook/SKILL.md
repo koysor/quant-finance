@@ -10,7 +10,7 @@ Create an educational marimo notebook following the quantitative finance project
 **Notebook name:** $0 (snake_case filename without .py extension, e.g. `put_call_parity`)
 **Topic:** $ARGUMENTS
 
-Create the file at `notebooks/$0.py`. Use `notebooks/distributions_normal_vs_lognormal.py` and `notebooks/simulate_geometric_brownian_motion_paths.py` as reference examples. Follow the general marimo rules in the `marimo-helper` skill (unique global names, `_`-prefixed temporaries, dependencies through cell arguments), but ignore its data-fetching workflow: that is for `notebooks/local/`.
+Create the file at `notebooks/$0.py`. Use `notebooks/distributions_normal_vs_lognormal.py` and `notebooks/simulate_geometric_brownian_motion_paths.py` as reference examples. Follow the general marimo rules in the shared `koysor-skills:marimo-helper` skill (unique global names, `_`-prefixed temporaries, dependencies through cell arguments).
 
 ## Browser constraints
 

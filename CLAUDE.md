@@ -41,7 +41,8 @@ The codebase follows a modular structure:
 - **`projects/`** - Portfolio projects; see `projects/README.md` for the required structure and write-up
 
 - **`notebooks/`** - Marimo notebooks published to GitHub Pages (GBM, distributions); they run in the browser, so they can't import `quant_finance` or fetch data, and `tests/test_notebooks.py` enforces this
-  - `local/` - Notebooks that fetch live data or use `quant_finance`; not published
+  - `local/` - Notebooks that fetch live data or use `quant_finance`; not published. Import from `quant_finance` in one cell, create a single instance of each fetcher needed (`EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`; API in `src/quant_finance/data_ingestion/README.md`), give each fetch its own name (e.g. `df_tsla`), and add a row with its `uv run marimo edit` command to the local table in `notebooks/README.md`
+  - New published notebooks: use the `new-notebook` skill; general marimo rules are in the shared `koysor-skills:marimo-helper` skill (from `repo-tools`)
 
 - **`tests/`** - pytest suite for the library
 
