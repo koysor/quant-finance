@@ -85,6 +85,8 @@ Notebooks that fetch live market data can't run in the browser, so they are in `
 uv run marimo edit notebooks/local/sp500_data_ingestion.py
 ```
 
+Published notebooks may import only `marimo`, `numpy`, `pandas`, `matplotlib`, `scipy` and `sympy`; `tests/test_notebooks.py` checks this and runs each one. With Claude Code, `/new-notebook <name> <topic>` creates a new one following these rules.
+
 ## Pre-commit Hooks
 
 This project uses [pre-commit](https://pre-commit.com/) to enforce code quality standards automatically before each commit.
