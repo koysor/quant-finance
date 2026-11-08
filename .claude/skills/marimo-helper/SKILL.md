@@ -15,7 +15,7 @@ Marimo automatically tracks dependencies by looking at the arguments of the `@ap
 - Avoid hidden state or side effects that bypass Marimo's dependency graph.
 
 ### 3. Execution Environment & Imports
-- **Project Path:** Notebooks in `notebooks/` are published to GitHub Pages and run in the browser, so they can only import `marimo`, `numpy`, `pandas` and `matplotlib`. Notebooks that import `quant_finance` or fetch data go in `notebooks/local/`; no `sys.path` changes are needed.
+- **Project Path:** Notebooks in `notebooks/` are published to GitHub Pages and run in the browser, so they can only import `marimo`, `numpy`, `pandas`, `matplotlib`, `scipy` and `sympy`. Notebooks that import `quant_finance` or fetch data go in `notebooks/local/`; no `sys.path` changes are needed.
 - **Imports:** Place imports in a dedicated cell at the top of the notebook.
 
 ## Workflow: Creating a New Notebook

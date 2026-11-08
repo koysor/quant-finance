@@ -16,9 +16,9 @@ Create the file at `notebooks/$0.py`. Use `notebooks/distributions_normal_vs_log
 
 Notebooks in `notebooks/` are exported to WebAssembly by `.github/workflows/deploy-marimo.yml` and run in Pyodide, so:
 
-1. **Imports** — only `marimo`, `numpy`, `pandas` and `matplotlib`. `tests/test_notebooks.py` fails on anything else, including `scipy`, `quant_finance` and the standard library outside these four. If the topic needs `quant_finance` or live data, stop and put the notebook in `notebooks/local/` instead.
+1. **Imports** — only `marimo`, `numpy`, `pandas`, `matplotlib`, `scipy` and `sympy` (Pyodide ships all six). `tests/test_notebooks.py` fails on anything else, including `quant_finance` and the standard library (e.g. `math`). If the topic needs `quant_finance` or live data, stop and put the notebook in `notebooks/local/` instead.
 2. **No network, files or databases** — generate data with `numpy` (seed it, e.g. `rng = np.random.default_rng(42)`) or define small datasets inline.
-3. **Self-contained maths** — implement the model in the notebook with numpy rather than `scipy.stats`. numpy has no `erf`, and `math` is blocked by the import test, so for the normal CDF write a vectorised numpy approximation (e.g. Abramowitz and Stegun 7.1.26) and say in the text that it is an approximation.
+3. **Self-contained maths** — implement the model in the notebook, since `quant_finance` is unavailable. Use `scipy.stats` for distributions (e.g. `norm.cdf` in Black-Scholes) and `sympy` for symbolic derivations such as Greeks.
 4. **Light computation** — keep simulations to a size that renders in a browser in a few seconds (around 10,000 paths × 252 steps at most); the notebook must also run as a script within 120 seconds for the test.
 
 ## Notebook structure

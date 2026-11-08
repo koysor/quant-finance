@@ -10,7 +10,7 @@ import pytest
 
 NOTEBOOKS_DIR = Path(__file__).parent.parent / "notebooks"
 PUBLISHED_NOTEBOOKS = sorted(NOTEBOOKS_DIR.glob("*.py"))
-BROWSER_SAFE_PACKAGES = {"marimo", "numpy", "pandas", "matplotlib"}
+BROWSER_SAFE_PACKAGES = {"marimo", "numpy", "pandas", "matplotlib", "scipy", "sympy"}
 
 
 def _imported_packages(path: Path) -> set[str]:

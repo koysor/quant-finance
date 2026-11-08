@@ -37,7 +37,7 @@ If you need complex logic with many temporary variables, wrap it in a function o
 Marimo automatically tracks dependencies based on function arguments. Ensure all required global variables are passed as arguments to the cell function.
 
 ### 4. Project Imports
-Notebooks in `notebooks/` are published to GitHub Pages and run in the browser, so they can only import `marimo`, `numpy`, `pandas` and `matplotlib`. Notebooks that import `quant_finance` or fetch data go in `notebooks/local/`, as below; no `sys.path` changes are needed.
+Notebooks in `notebooks/` are published to GitHub Pages and run in the browser, so they can only import `marimo`, `numpy`, `pandas`, `matplotlib`, `scipy` and `sympy`. Notebooks that import `quant_finance` or fetch data go in `notebooks/local/`, as below; no `sys.path` changes are needed.
 
 ```python
 @app.cell
