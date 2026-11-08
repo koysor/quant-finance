@@ -20,11 +20,17 @@ Marimo automatically tracks dependencies by looking at the arguments of the `@ap
 
 ## Workflow: Creating a New Notebook
 
+First decide where the notebook belongs:
+- **`notebooks/`** — educational notebooks published to GitHub Pages. Use the `new-notebook` skill (`/new-notebook <name> <topic>`), which covers the browser constraints, lesson structure and publishing links. Do not follow the steps below.
+- **`notebooks/local/`** — notebooks that use `quant_finance` or fetch live data. Follow the steps below; these are not published, so add a row to the local table in `notebooks/README.md` with its `uv run marimo edit` command.
+
+### Local notebooks (`notebooks/local/`)
+
 1. **Import the Library:** Import from `quant_finance` in a dedicated cell.
 2. **Define Fetchers:** Create a single instance of required fetchers (e.g., `EquityFetcher`).
 3. **Surgical Data Retrieval:** Define unique variables for each data fetch (e.g., `df_tsla`).
-4. **Visualizations:** Wrap plotting logic in cells that take data variables as dependencies.
-5. **Validation:** Ensure no variable names conflict across the entire file.
+4. **Visualisations:** Wrap plotting logic in cells that take data variables as dependencies.
+5. **Validation:** Ensure no variable names conflict across the entire file, then run `uv run marimo check <path>`.
 
 ## Data Ingestion Reference
 
