@@ -89,9 +89,9 @@ The bare root (`https://koysor.duckdns.org/`) permanently redirects to `/quant/`
 Deployment is automated via GitHub Actions (`.github/workflows/deploy-ec2.yml`):
 
 1. **Code Quality Checks** - Ruff formatting and linting run on GitHub-hosted runners
-2. **Build & Push Images** - Docker images are built in parallel on GitHub runners and pushed to GitHub Container Registry (GHCR)
-3. **SSH Deployment** - Connects to EC2 via SSH using `appleboy/ssh-action`
-4. **Pull Images** - EC2 pulls pre-built images from GHCR + Caddy from Docker Hub (no building on EC2)
+2. **Build & Push Images** - One `docker buildx bake` run (`docker/docker-bake.hcl`) builds the base image and the four app images on a GitHub runner, tags each with the commit SHA (and `latest` on `main`), and pushes them to GitHub Container Registry (GHCR)
+3. **SSH Deployment** - Connects to EC2 with the runner's own OpenSSH client; deploys run one at a time, and each checks out its exact commit on the instance
+4. **Pull Images** - EC2 pulls that commit's SHA-tagged images from GHCR + Caddy from Docker Hub (no building on EC2)
 5. **Container Orchestration** - Docker Compose starts Caddy reverse proxy and all four Streamlit applications using `docker-compose.prod.yml`
 6. **Health Checks** - Verifies all Streamlit apps and Caddy are responding
 
@@ -105,6 +105,8 @@ Docker images are publicly available at: **https://github.com/koysor?tab=package
 | Options | `ghcr.io/koysor/quant-finance/options:latest` |
 | Fixed Income | `ghcr.io/koysor/quant-finance/fixed-income:latest` |
 | Portfolio Management | `ghcr.io/koysor/quant-finance/portfolio-management:latest` |
+
+Each image is also tagged with the full commit SHA it was built from. Production runs the SHA tag of the deployed commit, so an earlier version can be redeployed by its SHA (see [DEPLOY-EC2.md](../.github/workflows/DEPLOY-EC2.md)).
 
 **Why pre-built images?** Building Docker images on the t3.micro instance is problematic due to limited RAM (1GB), disk space constraints, and slow build times. By building on GitHub's runners and pushing to GHCR, the EC2 instance only needs to pull pre-built images—a fast and reliable operation. See [README.md](README.md) for details.
 
@@ -166,7 +168,7 @@ The email subscription to the topic must be confirmed once (click the link in AW
 
 ## AWS CLI
 
-The AWS CLI (v2) is used for administration from a laptop. The deployments themselves do not use it: the workflows deploy over SSH with `appleboy/ssh-action`, so no AWS credentials are stored in the repository for deployment.
+The AWS CLI (v2) is used for administration from a laptop. The deployments themselves do not use it: the workflows deploy over plain SSH with the `EC2_SSH_KEY` secret, so no AWS credentials are stored in the repository for deployment.
 
 ### Install
 
