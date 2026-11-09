@@ -9,6 +9,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Plausible range for government bond yields, in percent
+MIN_YIELD_PERCENT = -5.0
+MAX_YIELD_PERCENT = 50.0
+
 
 class DataValidator:
     """Collection of data validation methods for different data types."""
@@ -134,8 +138,10 @@ class DataValidator:
 
         Validation checks:
             - DataFrame not empty
-            - Yields are non-negative (can be 0)
-            - Yields are reasonable (< 100%)
+            - Yields, in percent (4.25 means 4.25%), lie between
+              MIN_YIELD_PERCENT and MAX_YIELD_PERCENT. Slightly negative
+              yields are allowed: German and Japanese yields were below zero
+              for years.
         """
         # Check not empty
         if df.empty:
@@ -149,26 +155,15 @@ class DataValidator:
             logger.error("No numeric yield columns found")
             return False
 
-        # Check yields are non-negative
-        if (df[numeric_cols] < 0).any().any():
-            logger.error("Found negative yields")
-            return False
-
-        # Check yields are reasonable (< 100% as decimal, or < 10000 as basis points)
-        # Assume yields > 1 are in basis points, else in decimal
-        max_yield = df[numeric_cols].max().max()
-        if max_yield > 1:
-            # Likely basis points
-            if max_yield > 10000:
-                logger.error(f"Found unreasonable yield: {max_yield} bps")
-                if strict:
-                    return False
-        else:
-            # Likely decimal
-            if max_yield > 1.0:
-                logger.error(f"Found unreasonable yield: {max_yield * 100:.1f}%")
-                if strict:
-                    return False
+        lowest = df[numeric_cols].min().min()
+        highest = df[numeric_cols].max().max()
+        if lowest < MIN_YIELD_PERCENT or highest > MAX_YIELD_PERCENT:
+            logger.error(
+                f"Yields from {lowest}% to {highest}% fall outside "
+                f"{MIN_YIELD_PERCENT}% to {MAX_YIELD_PERCENT}%"
+            )
+            if strict:
+                return False
 
         logger.debug(f"Fixed income data validation passed (shape: {df.shape})")
         return True
@@ -222,7 +217,8 @@ class DataValidator:
         Validation checks:
             - Not empty
             - Reasonable length (1-10 characters)
-            - Only alphanumeric, dots, hyphens, carets (for indices)
+            - Only alphanumeric, dots, hyphens, carets (indices such as ^GSPC)
+              and equals signs (FX such as GBPUSD=X, futures such as ES=F)
         """
         if not symbol or not isinstance(symbol, str):
             logger.error("Symbol is empty or not a string")
@@ -238,10 +234,11 @@ class DataValidator:
             logger.error(f"Symbol too long: {symbol} ({len(symbol)} chars)")
             return False
 
-        # Allow alphanumeric, dots, hyphens, and carets (for indices like ^GSPC)
+        # Allow alphanumeric, dots, hyphens, carets (indices like ^GSPC) and
+        # equals signs (FX like GBPUSD=X, futures like ES=F)
         import re
 
-        if not re.match(r"^[A-Za-z0-9.\-^]+$", symbol):
+        if not re.match(r"^[A-Za-z0-9.\-^=]+$", symbol):
             logger.error(f"Symbol contains invalid characters: {symbol}")
             return False
 

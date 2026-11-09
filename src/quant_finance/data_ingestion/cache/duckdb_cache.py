@@ -4,9 +4,9 @@ DuckDB-based caching implementation for data ingestion.
 Provides persistent local caching with automatic expiration management.
 """
 
-import pickle
+import io
 import duckdb
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 import pandas as pd
@@ -17,6 +17,35 @@ from ..config import DataIngestionConfig, get_default_config
 from ..exceptions import CacheError
 
 logger = logging.getLogger(__name__)
+
+# Every Parquet file starts with these bytes
+_PARQUET_MAGIC = b"PAR1"
+
+
+def _utc_now() -> datetime:
+    """Current time in UTC, without a time zone (DuckDB TIMESTAMP is naive).
+
+    Using UTC rather than local time keeps expiry times right across
+    daylight-saving changes and between machines in different time zones.
+    """
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def _to_parquet(data: pd.DataFrame) -> bytes:
+    """Serialise a DataFrame, including its index, to Parquet bytes.
+
+    Parquet is a data format, so unlike pickle, loading it cannot run code,
+    and it stays readable across pandas versions.
+    """
+    if not isinstance(data, pd.DataFrame):
+        raise CacheError(f"Only DataFrames can be cached, not {type(data).__name__}")
+    buffer = io.BytesIO()
+    data.to_parquet(buffer, index=True)
+    return buffer.getvalue()
+
+
+def _from_parquet(blob: bytes) -> pd.DataFrame:
+    return pd.read_parquet(io.BytesIO(blob))
 
 
 class DuckDBCache(BaseCache):
@@ -160,15 +189,23 @@ class DuckDBCache(BaseCache):
                   AND expires_at > ?
             """
 
-            result = self.con.execute(query, [cache_key, datetime.now()]).fetchone()
+            result = self.con.execute(query, [cache_key, _utc_now()]).fetchone()
 
             if result is None:
                 logger.debug(f"Cache miss for {cache_key} in {table}")
                 return None
 
-            # Unpickle the DataFrame
             data_blob, expires_at = result
-            df = pickle.loads(data_blob)
+            if not bytes(data_blob).startswith(_PARQUET_MAGIC):
+                # Written by an older version of this package (as a pickle,
+                # which is never loaded because that could run code): drop it
+                # and treat it as a miss so the data is fetched again
+                logger.warning(f"Discarding unreadable cache entry {cache_key}")
+                self.con.execute(
+                    f"DELETE FROM {table} WHERE cache_key = ?", [cache_key]
+                )
+                return None
+            df = _from_parquet(bytes(data_blob))
 
             logger.info(f"Cache hit for {cache_key} in {table} (expires: {expires_at})")
             return df
@@ -202,11 +239,10 @@ class DuckDBCache(BaseCache):
             if table not in self._TABLE_SCHEMAS:
                 raise CacheError(f"Unknown cache table: {table}")
 
-            # Pickle the DataFrame
-            data_blob = pickle.dumps(data)
+            data_blob = _to_parquet(data)
 
             # Calculate expiration
-            now = datetime.now()
+            now = _utc_now()
             expires_at = now + timedelta(seconds=ttl_seconds)
 
             # Build insert query based on table
@@ -326,7 +362,7 @@ class DuckDBCache(BaseCache):
         """
         try:
             total_removed = 0
-            now = datetime.now()
+            now = _utc_now()
 
             for table_name in self._TABLE_SCHEMAS.keys():
                 # Count entries to be removed
@@ -386,7 +422,7 @@ class DuckDBCache(BaseCache):
                     WHERE expires_at <= ?
                 """
                 expired_count = self.con.execute(
-                    expired_query, [datetime.now()]
+                    expired_query, [_utc_now()]
                 ).fetchone()[0]
 
                 stats["tables"][table_name] = {

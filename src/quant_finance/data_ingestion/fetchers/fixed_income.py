@@ -11,7 +11,7 @@ import yfinance as yf
 import logging
 from datetime import datetime, timedelta
 
-from ..base.fetcher import BaseFetcher
+from ..base.fetcher import BaseFetcher, window_is_closed
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
 from ..exceptions import NoDataError, ValidationError
@@ -157,6 +157,16 @@ class FixedIncomeFetcher(BaseFetcher):
         start_str = start_date or "default"
         end_str = end_date or "default"
         return f"fixedincome:{maturities_str}:{start_str}:{end_str}"
+
+    def _ttl_seconds(self, end_date: Optional[str] = None, **kwargs) -> int:
+        """Cache yields over a date range that has ended for longer.
+
+        Yields are not adjusted after the fact, so once a range has ended its
+        data is final. With no end date the range runs to today.
+        """
+        if window_is_closed(end_date):
+            return self.config.closed_window_ttl_seconds
+        return self.config.default_ttl_seconds
 
     def _get_cache_metadata(
         self,

@@ -56,3 +56,10 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_any_generics = true
 warn_return_any = true
+
+[tool.coverage.run]
+source = ["quant_finance"]
+
+[tool.coverage.report]
+# Library coverage was 71% when this was set; raise it as coverage grows
+fail_under = 70

@@ -1,6 +1,7 @@
 """Unit tests for the DuckDB-backed data ingestion cache."""
 
-from datetime import date
+import pickle
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -27,10 +28,14 @@ def cache(config):
 
 @pytest.fixture
 def prices():
-    """Small price DataFrame with a date index."""
+    """Small price DataFrame with a date index.
+
+    The index has no freq, like data from yfinance (trading days are
+    irregular); Parquet does not store a DatetimeIndex freq.
+    """
     return pd.DataFrame(
         {"Close": [100.0, 101.5, 99.75], "Volume": [1000, 1200, 900]},
-        index=pd.date_range("2024-01-02", periods=3, freq="D", name="Date"),
+        index=pd.DatetimeIndex(["2024-01-02", "2024-01-03", "2024-01-05"], name="Date"),
     )
 
 
@@ -131,11 +136,39 @@ class TestGetAndSet:
         cache.set("shared", prices, "equity_cache", 3600, **equity_metadata())
         assert cache.get("shared", "options_cache") is None
 
-    def test_corrupt_blob_raises_cache_error(self, cache, prices):
+    def test_corrupt_parquet_raises_cache_error(self, cache, prices):
         cache.set("AAPL_1d", prices, "equity_cache", 3600, **equity_metadata())
-        cache.con.execute("UPDATE equity_cache SET data = 'not a pickle'::BLOB")
+        cache.con.execute("UPDATE equity_cache SET data = 'PAR1 truncated'::BLOB")
         with pytest.raises(CacheError):
             cache.get("AAPL_1d", "equity_cache")
+
+    def test_data_is_stored_as_parquet(self, cache, prices):
+        cache.set("AAPL_1d", prices, "equity_cache", 3600, **equity_metadata())
+        (blob,) = cache.con.execute("SELECT data FROM equity_cache").fetchone()
+        assert bytes(blob).startswith(b"PAR1")
+
+    def test_legacy_pickle_entry_is_a_miss_and_is_never_unpickled(
+        self, cache, prices, monkeypatch
+    ):
+        cache.set("AAPL_1d", prices, "equity_cache", 3600, **equity_metadata())
+        cache.con.execute("UPDATE equity_cache SET data = ?", [pickle.dumps(prices)])
+        monkeypatch.setattr(
+            pickle, "loads", lambda *a, **k: pytest.fail("pickle.loads was called")
+        )
+
+        assert cache.get("AAPL_1d", "equity_cache") is None
+        count = cache.con.execute("SELECT COUNT(*) FROM equity_cache").fetchone()[0]
+        assert count == 0
+
+    def test_only_dataframes_can_be_cached(self, cache, prices):
+        with pytest.raises(CacheError, match="DataFrame"):
+            cache.set("pair", (prices, prices), "options_cache", 3600, symbol="AAPL")
+
+    def test_timestamps_are_utc(self, cache, prices):
+        cache.set("AAPL_1d", prices, "equity_cache", 3600, **equity_metadata())
+        (created,) = cache.con.execute("SELECT created_at FROM equity_cache").fetchone()
+        utc_now = datetime.now(UTC).replace(tzinfo=None)
+        assert abs(created - utc_now) < timedelta(minutes=1)
 
 
 class TestExpiry:

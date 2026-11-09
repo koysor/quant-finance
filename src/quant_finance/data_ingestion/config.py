@@ -21,7 +21,13 @@ class DataIngestionConfig:
     Attributes:
         cache_dir: Directory for cache database
         cache_db_name: DuckDB database filename
-        default_ttl_seconds: Default cache TTL in seconds
+        default_ttl_seconds: Default cache TTL in seconds, used for data that may
+            still change (a date range that includes recent days)
+        closed_window_ttl_seconds: Cache TTL for unadjusted prices over a date
+            range that ended in the past, which no longer change
+        adjusted_closed_window_ttl_seconds: Cache TTL for adjusted prices over a
+            closed date range; these change after each dividend or split
+        options_ttl_seconds: Cache TTL for option chains
         rate_limit_per_second: Maximum API requests per second
         rate_limit_burst: Maximum burst requests allowed
         max_retries: Maximum retry attempts for failed requests
@@ -39,6 +45,9 @@ class DataIngestionConfig:
     )
     cache_db_name: str = "cache.duckdb"
     default_ttl_seconds: int = 3600  # 1 hour
+    closed_window_ttl_seconds: int = 30 * 86400  # 30 days
+    adjusted_closed_window_ttl_seconds: int = 86400  # 1 day
+    options_ttl_seconds: int = 1800  # 30 minutes
 
     # Rate limiting
     rate_limit_per_second: float = 2.0

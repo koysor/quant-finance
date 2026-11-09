@@ -5,6 +5,7 @@ Provides the core cache-or-fetch pattern used by all data fetchers.
 """
 
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 import logging
 import threading
@@ -45,6 +46,29 @@ def _shared_rate_limiter(tokens_per_second: float, bucket_size: int) -> Any:
                 tokens_per_second=tokens_per_second, bucket_size=bucket_size
             )
         return _shared_limiters[key]
+
+
+# Days after a date range ends before its data is treated as final, to allow
+# for late corrections from the data source
+SETTLEMENT_DAYS = 3
+
+
+def window_is_closed(end_date: Optional[str]) -> bool:
+    """Whether a date range ended long enough ago that its data is final.
+
+    Args:
+        end_date: End date in YYYY-MM-DD format, or None for "up to today"
+
+    Returns:
+        True if end_date is at least SETTLEMENT_DAYS before today (UTC)
+    """
+    if not end_date:
+        return False
+    try:
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        return False
+    return end <= datetime.now(UTC).date() - timedelta(days=SETTLEMENT_DAYS)
 
 
 def classify_error(error: Exception) -> DataIngestionError:
@@ -258,7 +282,7 @@ class BaseFetcher(ABC):
                     cache_key,
                     data,
                     table=self.cache_table,
-                    ttl_seconds=self.config.default_ttl_seconds,
+                    ttl_seconds=self._ttl_seconds(**kwargs),
                     **self._get_cache_metadata(**kwargs),
                 )
                 logger.info(f"Cached data for {cache_key}")
@@ -266,6 +290,20 @@ class BaseFetcher(ABC):
                 logger.warning(f"Cache write failed: {e}")
 
         return data
+
+    def _ttl_seconds(self, **kwargs: Any) -> int:
+        """How long to cache data fetched with these parameters.
+
+        Subclasses override this when some data changes less often than
+        others, for example history over a date range that has ended.
+
+        Args:
+            **kwargs: Fetch parameters
+
+        Returns:
+            Time-to-live in seconds
+        """
+        return self.config.default_ttl_seconds
 
     def _get_cache_metadata(self, *args: Any, **kwargs: Any) -> dict:
         """Get metadata to store with cached data.
@@ -280,18 +318,20 @@ class BaseFetcher(ABC):
         """
         return {}
 
-    def _fetch_with_retry(self, **kwargs: Any) -> Any:
-        """Call _fetch_impl with rate limiting and retries.
+    def _call_with_retry(self, func: Any, *args: Any, **kwargs: Any) -> Any:
+        """Call a data-source function with rate limiting and retries.
 
         Each attempt takes its own rate-limit token, and errors are
         classified before the retry logic sees them, so unknown symbols and
         empty responses fail at once while transient errors are retried.
 
         Args:
-            **kwargs: Arguments passed to _fetch_impl
+            func: Function that calls the data source
+            *args: Positional arguments for func
+            **kwargs: Keyword arguments for func
 
         Returns:
-            Whatever _fetch_impl returns
+            Whatever func returns
 
         Raises:
             DataIngestionError: The classified error from the last attempt
@@ -300,13 +340,17 @@ class BaseFetcher(ABC):
         def attempt() -> Any:
             with self.rate_limiter.throttle():
                 try:
-                    return self._fetch_impl(**kwargs)
+                    return func(*args, **kwargs)
                 except DataIngestionError:
                     raise
                 except Exception as e:
                     raise classify_error(e) from e
 
         return self.retry_strategy.execute(attempt)
+
+    def _fetch_with_retry(self, **kwargs: Any) -> Any:
+        """Call _fetch_impl with rate limiting and retries; see _call_with_retry."""
+        return self._call_with_retry(self._fetch_impl, **kwargs)
 
     def invalidate_cache(self, **kwargs) -> None:
         """Invalidate cache for specific parameters.
