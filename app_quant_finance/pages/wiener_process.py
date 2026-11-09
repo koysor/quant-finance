@@ -261,6 +261,7 @@ if run:
 
     st.markdown('<div id="simulation-results"></div>', unsafe_allow_html=True)
     st.pyplot(fig)
+    plt.close(fig)
     st.iframe(
         "<script>window.parent.document.getElementById('simulation-results').scrollIntoView({behavior: 'smooth'});</script>",
         height=1,

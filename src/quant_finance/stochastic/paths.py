@@ -30,10 +30,17 @@ def gbm_paths(
         Simulated prices
     """
     dt = T / n_steps
-    Z = rng.standard_normal((n_paths, n_steps))
-    log_returns = np.zeros((n_paths, n_steps + 1))
-    log_returns[:, 1:] = (mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z
-    return S0 * np.exp(np.cumsum(log_returns, axis=1))
+    # Work in place so that at most two (n_paths, n_steps) arrays exist at once
+    log_returns = rng.standard_normal((n_paths, n_steps))
+    log_returns *= sigma * np.sqrt(dt)
+    log_returns += (mu - 0.5 * sigma**2) * dt
+    prices = np.empty((n_paths, n_steps + 1))
+    prices[:, 0] = 0.0
+    np.cumsum(log_returns, axis=1, out=prices[:, 1:])
+    del log_returns
+    np.exp(prices, out=prices)
+    prices *= S0
+    return prices
 
 
 def wiener_paths(

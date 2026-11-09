@@ -12,7 +12,6 @@ dependencies = [
     "numpy>=2.5.4",
     "pandas>=3.0.6",
     "scipy>=1.15.2",
-    "sqlglot>=28.6.0",
     "streamlit>=1.66.1",
     "yfinance>=0.2.66",
 ]
@@ -28,6 +27,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.2",
+    "sqlglot>=28.6.0",
     "sympy>=1.14.0",
 ]
 
@@ -40,7 +40,7 @@ packages = ["src/quant_finance"]
 
 [tool.ruff.lint]
 # Pin the rule set: Ruff 0.17 widened the defaults, which broke CI (unpinned ruff).
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "W605"]
 
 [tool.mypy]
 ignore_missing_imports = true

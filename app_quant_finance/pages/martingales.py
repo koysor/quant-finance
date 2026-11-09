@@ -85,6 +85,7 @@ if st.button("Run Simulation"):
     ax.grid(True, alpha=0.3)
 
     st.pyplot(fig)
+    plt.close(fig)
 
     # Summary metrics
     m1, m2, m3 = st.columns(3)

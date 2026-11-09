@@ -168,6 +168,7 @@ with chart_col:
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
 with text_col:
     st.markdown("#### Portfolio Breakdown")
@@ -567,6 +568,7 @@ with chart_col_pre:
     ax2.grid(True, alpha=0.3)
     plt.tight_layout()
     st.pyplot(fig2)
+    plt.close(fig2)
 
 with text_col_pre:
     st.markdown("#### Understanding Pre-Expiration Values")

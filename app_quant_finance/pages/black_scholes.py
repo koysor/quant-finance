@@ -28,7 +28,7 @@ st.latex(latex_code)
 
 st.write("Where:")
 st.write("- $V(t,S)$ is the option price as a function of time $t$ and stock price $S$")
-st.write("- $\sigma$ is the volatility of the underlying stock")
+st.write(r"- $\sigma$ is the volatility of the underlying stock")
 st.write("- $r$ is the risk-free interest rate")
 st.write(
     r"- $\frac{\partial V}{\partial t}$ is the partial derivative of $V$ with respect to time"
