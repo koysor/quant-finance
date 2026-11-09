@@ -49,7 +49,7 @@ uv run mypy src/quant_finance          # Check types
 | **Jupyter / Marimo** | Interactive notebook environments for exploratory analysis |
 | **pytest** | Testing framework for code quality |
 | **mypy** | Static type checking for the library |
-| **Black / Ruff** | Code formatting and linting |
+| **Ruff** | Code formatting and linting |
 | **pre-commit** | Git hooks for automated code quality checks |
 
 ## Live Streamlit Applications
@@ -96,9 +96,8 @@ This project uses [pre-commit](https://pre-commit.com/) to enforce code quality 
 | Hook | Version | Purpose |
 |------|---------|---------|
 | **detect-secrets** | 1.5.0 | Prevents secrets from being committed to the repository |
-| **Black** | 26.1.0 | Code formatting - ensures consistent Python style |
-| **Ruff** | 0.14.14 | Linting with auto-fix - catches errors and style issues |
-| **Ruff Format** | 0.14.14 | Additional formatting checks |
+| **Ruff** | 0.17.2 | Linting with auto-fix - catches errors and style issues |
+| **Ruff Format** | 0.17.2 | Code formatting (Black-compatible style) - ensures consistent Python style |
 
 ### Installation
 
@@ -124,7 +123,7 @@ pre-commit run
 pre-commit run --all-files
 
 # Run a specific hook
-pre-commit run black --all-files
+pre-commit run ruff-format --all-files
 ```
 
 ### Skipping Hooks

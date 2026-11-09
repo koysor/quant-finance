@@ -33,7 +33,7 @@ uv run pytest tests/test_option_payoffs.py::test_name -v
 ### Code Quality
 ```bash
 # Format code (auto-fix)
-uv run black .
+uv run ruff format .
 
 # Lint code (auto-fix enabled via pre-commit)
 uv run ruff check . --fix
@@ -156,11 +156,11 @@ This applies to:
 - **Financial data:** yfinance
 - **Visualisation:** matplotlib, networkx
 - **Web framework:** streamlit
-- **Development:** black, ruff, mypy, pytest, pre-commit (in `[dependency-groups.dev]`)
+- **Development:** ruff, mypy, pytest, pre-commit (in `[dependency-groups.dev]`)
 - **Database:** duckdb for caching
 
 ### Code Style
-- **Formatting:** Black (line length 88)
+- **Formatting:** `ruff format` (Black-compatible style, line length 88)
 - **Linting:** Ruff with auto-fix via pre-commit hooks
 - **Comments:** Only where logic needs clarification; avoid redundant comments
 - **Type hints:** Encouraged for new code (numpy/scipy compatible)
@@ -203,14 +203,13 @@ st.pyplot(fig)
 ## CI/CD
 
 **GitHub Actions Workflows:**
-- **code-quality.yml** - Validates Black formatting, Ruff linting, Ruff formatting and mypy types on push/PR
+- **code-quality.yml** - Validates Ruff linting, Ruff formatting and mypy types on push/PR
 - **tests.yml** - Runs pytest suite on push/PR to main
 - **deploy-ec2.yml** - Deploys applications to AWS EC2
 - **deploy-marimo.yml** - Deploys Marimo notebooks to GitHub Pages
 
 Pre-commit hooks run locally on commit:
-- Black (formatting)
-- Ruff (linting with auto-fix)
+- Ruff (linting with auto-fix, and formatting)
 - Detect-secrets (prevents credential commits)
 
 ## Important Notes

@@ -52,7 +52,7 @@ Run each of these and fix any failures before finishing:
 uv run marimo check notebooks/$0.py
 uv run pytest tests/test_notebooks.py
 uv run ruff check notebooks/$0.py
-uv run black notebooks/$0.py
+uv run ruff format notebooks/$0.py
 ```
 
 Optionally open it with `uv run marimo edit notebooks/$0.py` to check the widgets and plots look right.

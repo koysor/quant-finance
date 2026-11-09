@@ -62,18 +62,23 @@ This job validates code formatting and linting before any builds occur.
 ### Key Commands
 
 ```bash
-black --check --diff .
+uv sync --locked
+```
+- Installs the tools at the versions pinned in `uv.lock`, so a new Ruff release cannot fail a deploy without a code change
+
+```bash
+uv run ruff check .
+```
+- Runs the Ruff linter to catch common errors, unused imports, and code smells
+
+```bash
+uv run ruff format --check --diff .
 ```
 - `--check` — Exit with error if files need reformatting (doesn't modify files)
 - `--diff` — Show what would change (useful for debugging failures)
 - `.` — Check all Python files in the repository
 
 **Why:** Ensures consistent code style across the team. Running this first (before expensive Docker builds) fails fast on simple issues.
-
-```bash
-ruff check .
-```
-- Runs the Ruff linter to catch common errors, unused imports, and code smells
 
 **Best practice:** Code quality checks are the first job because they're fast (~10 seconds) and catch issues early. No point building Docker images if the code has linting errors.
 
@@ -438,7 +443,7 @@ curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌──────────────────┐                                                        │
-│  │  code-quality    │  Black + Ruff check + Ruff format                      │
+│  │  code-quality    │  Ruff check + Ruff format                              │
 │  │  (ubuntu-latest) │  ~10 seconds                                           │
 │  └────────┬─────────┘                                                        │
 │           │ needs                                                            │

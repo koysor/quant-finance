@@ -27,14 +27,11 @@ jobs:
     - name: Install dependencies
       run: uv sync --locked
 
-    - name: Check code formatting with Black
-      run: uv run black --check --diff .
-
     - name: Check code quality with Ruff
       run: uv run ruff check .
 
     - name: Check code formatting with Ruff
-      run: uv run ruff format --check .
+      run: uv run ruff format --check --diff .
 
     - name: Check types with mypy
       run: uv run mypy src/quant_finance

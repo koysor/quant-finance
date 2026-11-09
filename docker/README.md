@@ -227,7 +227,7 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         GitHub Actions Pipeline                          │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  1. Code Quality      Black formatting + Ruff linting                    │
+│  1. Code Quality      Ruff formatting + Ruff linting                     │
 │         ↓                                                                │
 │  2. Build Base        Build shared base image (Python deps + src/)       │
 │     (GitHub Runner)   Push to ghcr.io/koysor/quant-finance/base         │
@@ -242,7 +242,7 @@ The workflow at `.github/workflows/deploy-ec2.yml`:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Code quality checks** - Black and Ruff run on GitHub runners
+1. **Code quality checks** - Ruff formatting and linting run on GitHub runners
 2. **Build base image** - Shared base image with Python deps and `src/` modules, pushed to GHCR
 3. **Build and push** - Four thin app Docker images built in parallel on GitHub runners, pushed to GHCR
 4. **Deploy to EC2** - SSH into EC2, pull base image first (app images share its layers), then app images + Caddy
