@@ -16,6 +16,10 @@ def _():
         FixedIncomeFetcher,
         FetchError,
     )
+    from quant_finance.pricing.black_scholes import (
+        black_scholes_delta,
+        black_scholes_gamma,
+    )
 
     # Initialize fetchers
     equity_fetcher = EquityFetcher()
@@ -31,6 +35,8 @@ def _():
         FetchError,
         FixedIncomeFetcher,
         OptionsFetcher,
+        black_scholes_delta,
+        black_scholes_gamma,
         datetime,
         end_date,
         equity_fetcher,
@@ -427,10 +433,12 @@ def _(calls, mo, plt, puts):
 @app.cell
 def _(mo):
     mo.md("""
-    ### 2.3 Options by Type (with available Greeks)
+    ### 2.3 Options with Greeks
 
-    Fetch only calls or puts for a given expiration. yfinance provides
-    implied volatility natively.
+    yfinance provides implied volatility but no Greeks, so compute them from
+    each option's implied volatility with the Black-Scholes functions in
+    `quant_finance.pricing.black_scholes` (assuming a 4% risk-free rate and
+    no dividends here).
 
     **Quant use cases:** Portfolio Greeks aggregation, dynamic hedging,
     risk limits monitoring.
@@ -439,18 +447,35 @@ def _(mo):
 
 
 @app.cell
-def _(expirations, mo, options_fetcher):
+def _(
+    black_scholes_delta,
+    black_scholes_gamma,
+    datetime,
+    equity_fetcher,
+    expirations,
+    mo,
+    options_fetcher,
+):
+    greeks_calls = None
     if expirations:
         try:
-            _exp = expirations[0]
-            greeks_calls = options_fetcher.fetch_greeks(
-                "AAPL", _exp, option_type="call"
+            # Skip the nearest expiry, which may be today (T = 0, Greeks degenerate)
+            _exp = expirations[1] if len(expirations) > 1 else expirations[0]
+            greeks_calls, _ = options_fetcher.fetch_option_chain("AAPL", _exp)
+            _spot = equity_fetcher.fetch_realtime_quote("AAPL")["price"]
+            _T = (datetime.strptime(_exp, "%Y-%m-%d") - datetime.now()).days / 365
+            _args = (_spot, greeks_calls["Strike"], _T, 0.04)
+            greeks_calls["Delta"] = black_scholes_delta(
+                *_args, greeks_calls["ImpliedVolatility"]
+            )
+            greeks_calls["Gamma"] = black_scholes_gamma(
+                *_args, greeks_calls["ImpliedVolatility"]
             )
             _out = greeks_calls[
-                ["Strike", "Last", "Bid", "Ask", "ImpliedVolatility"]
+                ["Strike", "Last", "ImpliedVolatility", "Delta", "Gamma"]
             ].head(10)
         except Exception as e:
-            _out = mo.md(f"**Error fetching Greeks data:** {e}")
+            _out = mo.md(f"**Error fetching options data:** {e}")
     else:
         _out = mo.md("No expirations available.")
     _out
@@ -607,7 +632,7 @@ def _(mo):
     | 4 | Stock info / fundamentals | `EquityFetcher` | `get_info()` | Factor models, fundamental screening, CAPM beta |
     | 5 | Options expirations | `OptionsFetcher` | `get_available_expirations()` | Term structure analysis, roll planning |
     | 6 | Options chain (calls & puts) | `OptionsFetcher` | `fetch_option_chain()` | Vol surface, options pricing, Greeks, hedging |
-    | 7 | Options by type (with Greeks) | `OptionsFetcher` | `fetch_greeks()` | Portfolio Greeks, dynamic hedging |
+    | 7 | Options with Greeks | `OptionsFetcher` + `black_scholes` | `fetch_option_chain()`, `black_scholes_delta()` | Portfolio Greeks, dynamic hedging |
     | 8 | Treasury yields (time series) | `FixedIncomeFetcher` | `fetch_treasury_yields()` | Risk-free rate, bond pricing, interest rate VaR |
     | 9 | Yield curve (snapshot) | `FixedIncomeFetcher` | `fetch_yield_curve()` | Curve fitting, relative value, scenario analysis |
     | 10 | Available maturities | `FixedIncomeFetcher` | `get_available_maturities()` | Discovery / configuration |

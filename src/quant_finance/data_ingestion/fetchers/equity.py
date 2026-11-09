@@ -10,10 +10,10 @@ import pandas as pd
 import yfinance as yf
 import logging
 
-from ..base.fetcher import CACHE_KEY_VERSION, BaseFetcher
+from ..base.fetcher import CACHE_KEY_VERSION, BaseFetcher, window_is_closed
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
-from ..exceptions import FetchError, NoDataError, ValidationError
+from ..exceptions import NoDataError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +124,19 @@ class EquityFetcher(BaseFetcher):
             f"equity:{CACHE_KEY_VERSION}:{symbol}:{start_date}:{end_date}:"
             f"{interval}:{adjust}"
         )
+
+    def _ttl_seconds(self, end_date: Optional[str] = None, **kwargs: Any) -> int:
+        """Cache recent data briefly and finished date ranges for longer.
+
+        Unadjusted prices over a range that has ended no longer change.
+        Adjusted prices do: every dividend or split rescales the history, so
+        they are kept for a day at most.
+        """
+        if not window_is_closed(end_date):
+            return self.config.default_ttl_seconds
+        if self.config.auto_adjust:
+            return self.config.adjusted_closed_window_ttl_seconds
+        return self.config.closed_window_ttl_seconds
 
     def _get_cache_metadata(
         self,
@@ -268,26 +281,23 @@ class EquityFetcher(BaseFetcher):
             >>> fetcher = EquityFetcher()
             >>> quote = fetcher.fetch_realtime_quote("AAPL")
             >>> print(f"Current price: ${quote['price']:.2f}")
+
+        Raises:
+            FetchError: If fetching fails (not cached, but rate limited and retried)
         """
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+        info = self.get_info(symbol)
 
-            return {
-                "symbol": symbol,
-                "price": info.get("currentPrice") or info.get("regularMarketPrice"),
-                "previous_close": info.get("previousClose"),
-                "open": info.get("open"),
-                "day_high": info.get("dayHigh"),
-                "day_low": info.get("dayLow"),
-                "volume": info.get("volume"),
-                "market_cap": info.get("marketCap"),
-                "currency": info.get("currency"),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to fetch quote for {symbol}: {e}")
-            raise FetchError(f"Failed to fetch real-time quote: {e}") from e
+        return {
+            "symbol": symbol,
+            "price": info.get("currentPrice") or info.get("regularMarketPrice"),
+            "previous_close": info.get("previousClose"),
+            "open": info.get("open"),
+            "day_high": info.get("dayHigh"),
+            "day_low": info.get("dayLow"),
+            "volume": info.get("volume"),
+            "market_cap": info.get("marketCap"),
+            "currency": info.get("currency"),
+        }
 
     def get_info(self, symbol: str) -> Dict[str, Any]:
         """Get detailed information about a stock.
@@ -303,11 +313,9 @@ class EquityFetcher(BaseFetcher):
             >>> info = fetcher.get_info("AAPL")
             >>> print(f"Company: {info['longName']}")
             >>> print(f"Sector: {info['sector']}")
-        """
-        try:
-            ticker = yf.Ticker(symbol)
-            return ticker.info
 
-        except Exception as e:
-            logger.error(f"Failed to fetch info for {symbol}: {e}")
-            raise FetchError(f"Failed to fetch stock info: {e}") from e
+        Raises:
+            FetchError: If fetching fails (not cached, but rate limited and retried)
+        """
+        info: Dict[str, Any] = self._call_with_retry(lambda: yf.Ticker(symbol).info)
+        return info

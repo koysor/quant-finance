@@ -28,7 +28,8 @@ print(df.head())
 All dependencies are already in `pyproject.toml`:
 - yfinance >= 0.2.66
 - duckdb >= 1.5.6
-- pandas >= 3.0.6 (cached DataFrames are pickled, so pandas 2.x cannot read them)
+- pandas >= 3.0.6
+- pyarrow (installed with streamlit), which stores cached DataFrames as Parquet
 - scipy >= 1.15.2
 
 No additional packages needed!
@@ -304,15 +305,23 @@ print(
 
 #### 2.3 Options with Greeks
 
-Fetch an options chain filtered by option type. Note: yfinance provides implied volatility natively; for full Greeks (delta, gamma, theta, vega), use scipy or a dedicated pricing library.
+Yahoo Finance provides implied volatility but no Greeks. Compute them from the chain with the Black-Scholes functions in `quant_finance.pricing.black_scholes`. (`fetch_greeks()` is deprecated: despite its name it returns the chain without Greeks.)
 
 ```python
-# Get call options with available Greeks
-greeks_df = fetcher.fetch_greeks("AAPL", "2026-06-20", option_type="call")
-print(greeks_df[["Strike", "Last", "ImpliedVolatility"]].head())
+from quant_finance.pricing.black_scholes import black_scholes_delta, black_scholes_gamma
 
-# For full Greeks, combine with Black-Scholes calculation
-# (see app_quant_finance for implementations)
+calls, puts = fetcher.fetch_option_chain("AAPL", "2026-06-20")
+spot = EquityFetcher().fetch_realtime_quote("AAPL")["price"]
+T = 0.5  # years to expiry
+r = 0.04  # risk-free rate
+
+calls["Delta"] = black_scholes_delta(
+    spot, calls["Strike"], T, r, calls["ImpliedVolatility"]
+)
+calls["Gamma"] = black_scholes_gamma(
+    spot, calls["Strike"], T, r, calls["ImpliedVolatility"]
+)
+print(calls[["Strike", "ImpliedVolatility", "Delta", "Gamma"]].head())
 ```
 
 **Quantitative finance use cases:**
@@ -422,9 +431,13 @@ df2 = fetcher.fetch_historical("AAPL", "2024-01-01", "2024-12-31")
 
 | Data Type | Default TTL | Rationale |
 |-----------|-------------|-----------|
-| Equity (historical) | 1 hour | Historical data changes infrequently |
-| Options chains | 30 minutes | Options prices update throughout the trading day |
-| Fixed income | 1 hour | Treasury yields update daily |
+| Equity or yields, range ending in the last 3 days | 1 hour (`default_ttl_seconds`) | The latest values may still change |
+| Equity, unadjusted (`auto_adjust=False`), range ended | 30 days (`closed_window_ttl_seconds`) | Final once the range has ended |
+| Equity, adjusted (`auto_adjust=True`), range ended | 1 day (`adjusted_closed_window_ttl_seconds`) | Adjusted history is rescaled after every dividend or split |
+| Fixed income, range ended | 30 days (`closed_window_ttl_seconds`) | Yields are not adjusted after the fact |
+| Options chains | 30 minutes (`options_ttl_seconds`) | Option prices move throughout the trading day |
+
+Cached DataFrames are stored as Parquet, a data format: unlike pickle, reading a cache file cannot run code, and it stays readable across pandas versions. Entries written by older versions of the package (as pickles) are discarded unread and fetched again. Expiry times are in UTC.
 
 ### Cache Management
 
@@ -460,7 +473,7 @@ manager.auto_cleanup_if_needed(max_expired_ratio=0.2, min_expired_count=10)
 | Table | Stored By | Key Format |
 |-------|-----------|------------|
 | `equity_cache` | `EquityFetcher` | `equity:v2:{symbol}:{start}:{end}:{interval}:{adj\|raw}` |
-| `options_cache` | `OptionsFetcher` | `options:{symbol}:{expiration}` |
+| `options_cache` | `OptionsFetcher` | `options:v2:{symbol}:{expiration}` (calls and puts in one frame, with an `OptionType` column) |
 | `fixed_income_cache` | `FixedIncomeFetcher` | `fixedincome:{maturities}:{start}:{end}` |
 
 ### Cache Location
@@ -515,7 +528,10 @@ fetcher = EquityFetcher(config=config)
 |-----------|---------|-------------|
 | `cache_dir` | `~/.quant_finance` | Cache database directory |
 | `cache_db_name` | `cache.duckdb` | Cache database filename |
-| `default_ttl_seconds` | `3600` (1 hour) | Cache time-to-live |
+| `default_ttl_seconds` | `3600` (1 hour) | Cache time-to-live for data that may still change |
+| `closed_window_ttl_seconds` | `2592000` (30 days) | Unadjusted prices and yields over an ended range |
+| `adjusted_closed_window_ttl_seconds` | `86400` (1 day) | Adjusted prices over an ended range |
+| `options_ttl_seconds` | `1800` (30 minutes) | Option chains |
 | `rate_limit_per_second` | `2.0` | API requests per second |
 | `rate_limit_burst` | `10` | Maximum burst capacity |
 | `max_retries` | `3` | Retry attempts on failure |
@@ -707,8 +723,7 @@ Automatic data quality validation is applied to all fetched data:
 
 ### Fixed Income Validation
 - Data is non-empty
-- Yields are non-negative
-- Yields are reasonable (< 100%)
+- Yields, in percent, lie between -5% and 50% (slightly negative yields are allowed)
 
 ### Manual Validation
 
@@ -800,7 +815,7 @@ A complete reference of every data item available through the package, with corr
 | 4 | Stock info / fundamentals | `EquityFetcher` | `get_info()` | Factor models, fundamental screening, CAPM beta |
 | 5 | Options expirations | `OptionsFetcher` | `get_available_expirations()` | Term structure analysis, roll planning |
 | 6 | Options chain (calls & puts) | `OptionsFetcher` | `fetch_option_chain()` | Vol surface, options pricing, Greeks, hedging |
-| 7 | Options by type (with Greeks) | `OptionsFetcher` | `fetch_greeks()` | Portfolio Greeks, dynamic hedging |
+| 7 | Options by type (deprecated; no Greeks) | `OptionsFetcher` | `fetch_greeks()` | Use `fetch_option_chain()` with `quant_finance.pricing.black_scholes` |
 | 8 | Treasury yields (time series) | `FixedIncomeFetcher` | `fetch_treasury_yields()` | Risk-free rate, bond pricing, interest rate VaR |
 | 9 | Yield curve (snapshot) | `FixedIncomeFetcher` | `fetch_yield_curve()` | Curve fitting, relative value, scenario analysis |
 | 10 | Available maturities | `FixedIncomeFetcher` | `get_available_maturities()` | Discovery / configuration |

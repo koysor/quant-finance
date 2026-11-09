@@ -3,6 +3,9 @@
 yfinance is replaced with fakes, so these tests need no network.
 """
 
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
+
 import pandas as pd
 import pytest
 
@@ -14,11 +17,13 @@ from quant_finance.data_ingestion.exceptions import (
     SymbolNotFoundError,
     ValidationError,
 )
-from quant_finance.data_ingestion.fetchers import equity, fixed_income
+from quant_finance.data_ingestion.fetchers import equity, fixed_income, options
 from quant_finance.data_ingestion.fetchers.equity import EquityFetcher
 from quant_finance.data_ingestion.fetchers.fixed_income import FixedIncomeFetcher
+from quant_finance.data_ingestion.fetchers.options import OptionsFetcher
 from quant_finance.data_ingestion.utils import retry
 from quant_finance.data_ingestion.utils.retry import retry_on_exception
+from quant_finance.data_ingestion.utils.validators import DataValidator
 
 START, END = "2024-01-01", "2024-02-01"
 
@@ -238,3 +243,167 @@ class TestRetryOnException:
         with pytest.raises(KeyError):
             broken()
         assert len(calls) == 1
+
+
+class TestCacheLifetimes:
+    TODAY = datetime.now(UTC).date()
+
+    def days_ago(self, days):
+        return (self.TODAY - timedelta(days=days)).isoformat()
+
+    @pytest.mark.parametrize(
+        "end_date, closed",
+        [(None, False), ("not a date", False), (0, False), (1, False), (3, True)],
+    )
+    def test_window_is_closed(self, end_date, closed):
+        if isinstance(end_date, int):
+            end_date = self.days_ago(end_date)
+        assert base_fetcher.window_is_closed(end_date) is closed
+
+    def test_recent_equity_data_uses_the_default_lifetime(self, config):
+        ttl = EquityFetcher(config)._ttl_seconds(end_date=self.days_ago(0))
+        assert ttl == config.default_ttl_seconds
+
+    def test_closed_adjusted_prices_are_kept_for_a_day(self, config):
+        ttl = EquityFetcher(config)._ttl_seconds(end_date=self.days_ago(30))
+        assert ttl == config.adjusted_closed_window_ttl_seconds
+
+    def test_closed_raw_prices_are_kept_for_longer(self, tmp_path):
+        config = DataIngestionConfig(cache_dir=str(tmp_path), auto_adjust=False)
+        ttl = EquityFetcher(config)._ttl_seconds(end_date=self.days_ago(30))
+        assert ttl == config.closed_window_ttl_seconds
+
+    def test_closed_yields_are_kept_for_longer(self, config):
+        fetcher = FixedIncomeFetcher(config)
+        assert fetcher._ttl_seconds(end_date=self.days_ago(30)) == (
+            config.closed_window_ttl_seconds
+        )
+        assert fetcher._ttl_seconds(end_date=None) == config.default_ttl_seconds
+
+    def test_fetch_caches_with_the_chosen_lifetime(self, monkeypatch, config):
+        patch_download(monkeypatch, equity, ohlcv())
+        fetcher = EquityFetcher(config)
+        fetcher.fetch_historical("AAPL", START, END)
+
+        created, expires = fetcher.cache.con.execute(
+            "SELECT created_at, expires_at FROM equity_cache"
+        ).fetchone()
+        lifetime = (expires - created).total_seconds()
+        assert lifetime == config.adjusted_closed_window_ttl_seconds
+
+
+def chain_side(strikes, last):
+    """Option chain side shaped like yfinance's, with mixed column types."""
+    return pd.DataFrame(
+        {
+            "contractSymbol": [f"AAPL{k:08.0f}" for k in strikes],
+            "lastTradeDate": pd.to_datetime(
+                ["2024-01-02 15:30"] * len(strikes), utc=True
+            ),
+            "strike": strikes,
+            "lastPrice": last,
+            "bid": last,
+            "ask": last,
+            "volume": [10.0] * len(strikes),
+            "openInterest": [100] * len(strikes),
+            "impliedVolatility": [0.25] * len(strikes),
+            "inTheMoney": [True] * len(strikes),
+        }
+    )
+
+
+class FakeTicker:
+    """Stand-in for yf.Ticker serving one options chain."""
+
+    calls_made = 0
+
+    def __init__(self, symbol):
+        self.options = ("2024-06-21", "2024-07-19")
+
+    def option_chain(self, expiration):
+        FakeTicker.calls_made += 1
+        return SimpleNamespace(
+            calls=chain_side([95.0, 100.0], [7.0, 4.0]),
+            puts=chain_side([95.0, 100.0, 105.0], [2.0, 3.5, 6.5]),
+        )
+
+
+class TestOptionsFetcher:
+    @pytest.fixture
+    def fake_ticker(self, monkeypatch):
+        FakeTicker.calls_made = 0
+        monkeypatch.setattr(options.yf, "Ticker", FakeTicker)
+
+    def test_returns_calls_and_puts_with_the_expiry_fetched(self, fake_ticker, config):
+        calls, puts = OptionsFetcher(config).fetch_option_chain("AAPL", use_cache=False)
+
+        assert list(calls["Strike"]) == [95.0, 100.0]
+        assert list(puts["Strike"]) == [95.0, 100.0, 105.0]
+        assert set(calls["Expiration"]) == {"2024-06-21"}
+        assert "OptionType" not in calls.columns
+
+    def test_chain_round_trips_through_the_cache(self, fake_ticker, config):
+        fetcher = OptionsFetcher(config)
+        first = fetcher.fetch_option_chain("AAPL", "2024-06-21")
+        second = fetcher.fetch_option_chain("AAPL", "2024-06-21")
+
+        assert FakeTicker.calls_made == 1
+        for fetched, cached in zip(first, second):
+            pd.testing.assert_frame_equal(fetched, cached)
+
+    def test_uses_the_configured_lifetime(self, fake_ticker, config):
+        fetcher = OptionsFetcher(config)
+        fetcher.fetch_option_chain("AAPL", "2024-06-21")
+
+        created, expires = fetcher.cache.con.execute(
+            "SELECT created_at, expires_at FROM options_cache"
+        ).fetchone()
+        assert (expires - created).total_seconds() == config.options_ttl_seconds
+
+    def test_fetch_greeks_is_deprecated(self, fake_ticker, config):
+        with pytest.warns(DeprecationWarning, match="no Greeks"):
+            puts = OptionsFetcher(config).fetch_greeks("AAPL", "2024-06-21", "put")
+
+        assert len(puts) == 3
+
+
+class TestUncachedCalls:
+    def test_get_info_is_retried(self, monkeypatch, config):
+        attempts = []
+
+        class FlakyTicker:
+            def __init__(self, symbol):
+                attempts.append(symbol)
+                if len(attempts) < 2:
+                    raise ConnectionError("connection reset")
+                self.info = {"longName": "Apple Inc.", "currentPrice": 190.0}
+
+        monkeypatch.setattr(equity.yf, "Ticker", FlakyTicker)
+
+        quote = EquityFetcher(config).fetch_realtime_quote("AAPL")
+
+        assert quote["price"] == 190.0
+        assert len(attempts) == 2
+
+
+class TestValidators:
+    @pytest.mark.parametrize("symbol", ["AAPL", "^GSPC", "BRK-B", "GBPUSD=X", "ES=F"])
+    def test_valid_symbols(self, symbol):
+        assert DataValidator.validate_symbol(symbol)
+
+    @pytest.mark.parametrize("symbol", ["", "AAPL;DROP", "A" * 11])
+    def test_invalid_symbols(self, symbol):
+        assert not DataValidator.validate_symbol(symbol)
+
+    @pytest.mark.parametrize(
+        "yields, valid",
+        [
+            ([4.2, 4.5], True),
+            ([-0.5, 0.1], True),
+            ([4.0, 60.0], False),
+            ([-8.0, 1.0], False),
+        ],
+    )
+    def test_yield_range_in_percent(self, yields, valid):
+        df = pd.DataFrame({"10Y": yields})
+        assert DataValidator.validate_fixed_income_data(df) is valid
