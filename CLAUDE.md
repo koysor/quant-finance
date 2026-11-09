@@ -32,7 +32,7 @@ The codebase follows a modular structure:
   - `pages/` - MPT, CAPM, and alpha analysis pages
 
 - **`src/quant_finance/`** - Installable library; put reusable calculations here, not in pages
-  - `pricing/` - Pricing models and no-arbitrage relationships (`black_scholes`, `parity`)
+  - `pricing/` - Pricing models, Greeks, implied volatility and no-arbitrage relationships (`black_scholes`, `binomial`, `parity`)
   - `options/` - Option and multi-leg strategy payoffs
   - `portfolio/` - Modern Portfolio Theory and CAPM (`mpt`, `capm`)
   - `stochastic/` - Simulated paths (GBM, Wiener process, random walk)
