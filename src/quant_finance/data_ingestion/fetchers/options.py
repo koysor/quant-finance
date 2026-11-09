@@ -13,7 +13,7 @@ import logging
 from ..base.fetcher import BaseFetcher
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
-from ..exceptions import FetchError, ValidationError
+from ..exceptions import FetchError, NoDataError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -50,59 +50,56 @@ class OptionsFetcher(BaseFetcher):
             Tuple of (calls DataFrame, puts DataFrame)
 
         Raises:
-            FetchError: If fetching fails
+            NoDataError: If the symbol has no options or the chain is empty
+
+        Errors from yfinance are left to the base class to classify.
         """
-        try:
-            logger.info(f"Fetching options chain for {symbol} exp: {expiration}")
+        logger.info(f"Fetching options chain for {symbol} exp: {expiration}")
 
-            # Get ticker object
-            ticker = yf.Ticker(symbol)
+        # Get ticker object
+        ticker = yf.Ticker(symbol)
 
-            # Get options chain for specified expiration
-            if expiration:
-                opt_chain = ticker.option_chain(expiration)
-            else:
-                # Use nearest expiration
-                expirations = ticker.options
-                if not expirations:
-                    raise FetchError(f"No options available for {symbol}")
-                expiration = expirations[0]
-                opt_chain = ticker.option_chain(expiration)
+        # Get options chain for specified expiration
+        if expiration:
+            opt_chain = ticker.option_chain(expiration)
+        else:
+            # Use nearest expiration
+            expirations = ticker.options
+            if not expirations:
+                raise NoDataError(f"No options available for {symbol}")
+            expiration = expirations[0]
+            opt_chain = ticker.option_chain(expiration)
 
-            calls = opt_chain.calls
-            puts = opt_chain.puts
+        calls = opt_chain.calls
+        puts = opt_chain.puts
 
-            if calls.empty and puts.empty:
-                raise FetchError(
-                    f"No options data returned for {symbol} exp: {expiration}"
-                )
-
-            # Rename columns to standardized format
-            column_mapping = {
-                "strike": "Strike",
-                "lastPrice": "Last",
-                "bid": "Bid",
-                "ask": "Ask",
-                "volume": "Volume",
-                "openInterest": "OpenInterest",
-                "impliedVolatility": "ImpliedVolatility",
-            }
-
-            calls = calls.rename(columns=column_mapping)
-            puts = puts.rename(columns=column_mapping)
-
-            logger.info(
-                f"Fetched options for {symbol}: {len(calls)} calls, {len(puts)} puts"
+        if calls.empty and puts.empty:
+            raise NoDataError(
+                f"No options data returned for {symbol} exp: {expiration}"
             )
 
-            # Store expiration for metadata
-            self._last_expiration = expiration
+        # Rename columns to standardized format
+        column_mapping = {
+            "strike": "Strike",
+            "lastPrice": "Last",
+            "bid": "Bid",
+            "ask": "Ask",
+            "volume": "Volume",
+            "openInterest": "OpenInterest",
+            "impliedVolatility": "ImpliedVolatility",
+        }
 
-            return calls, puts
+        calls = calls.rename(columns=column_mapping)
+        puts = puts.rename(columns=column_mapping)
 
-        except Exception as e:
-            logger.error(f"Failed to fetch options for {symbol}: {e}")
-            raise FetchError(f"Failed to fetch options data: {e}") from e
+        logger.info(
+            f"Fetched options for {symbol}: {len(calls)} calls, {len(puts)} puts"
+        )
+
+        # Store expiration for metadata
+        self._last_expiration = expiration
+
+        return calls, puts
 
     def _validate_data(self, data: Any) -> bool:
         """Validate options data.
@@ -230,15 +227,8 @@ class OptionsFetcher(BaseFetcher):
             except Exception as e:
                 logger.warning(f"Cache read failed: {e}, proceeding to fetch")
 
-        # Fetch with rate limiting
-        with self.rate_limiter.throttle():
-            try:
-                data = self.retry_strategy.execute(
-                    self._fetch_impl, symbol=symbol, expiration=expiration
-                )
-            except Exception as e:
-                self._handle_fetch_error(e)
-                raise
+        # Fetch with rate limiting and retries
+        data = self._fetch_with_retry(symbol=symbol, expiration=expiration)
 
         # Validate
         if self.config.validate_data:

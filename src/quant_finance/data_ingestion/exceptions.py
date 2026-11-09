@@ -69,7 +69,22 @@ class ValidationError(DataIngestionError):
     pass
 
 
-class SymbolNotFoundError(FetchError):
+class NoDataError(FetchError):
+    """The data source returned no data for the request.
+
+    Raised when a request succeeds but comes back empty. Yahoo Finance does
+    this both for unknown tickers and for date ranges with no trading, so
+    the two cases cannot always be told apart. Retrying does not help, so
+    this error is never retried.
+
+    Example:
+        >>> raise NoDataError("No data returned for XYZ from 2024-01-06 to 2024-01-07")
+    """
+
+    pass
+
+
+class SymbolNotFoundError(NoDataError):
     """Symbol or ticker was not found in data source.
 
     Raised when attempting to fetch data for a symbol that doesn't

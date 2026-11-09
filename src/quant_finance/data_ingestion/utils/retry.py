@@ -71,13 +71,14 @@ class ExponentialBackoffRetry:
         """
         from ..exceptions import (
             RateLimitError,
-            SymbolNotFoundError,
+            NoDataError,
             ValidationError,
             FetchError,
         )
 
-        # Don't retry validation errors or symbol not found
-        if isinstance(exception, (ValidationError, SymbolNotFoundError)):
+        # Don't retry validation errors or empty responses (which include
+        # unknown symbols): asking again gives the same answer
+        if isinstance(exception, (ValidationError, NoDataError)):
             return False
 
         # Always retry rate limit errors (with backoff)
@@ -215,6 +216,17 @@ class ExponentialBackoffRetry:
         )
 
 
+class _TypedRetry(ExponentialBackoffRetry):
+    """Backoff retry that retries only the given exception types."""
+
+    def __init__(self, exceptions: Tuple[Type[Exception], ...], **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.exceptions = exceptions
+
+    def should_retry(self, exception: Exception) -> bool:
+        return isinstance(exception, self.exceptions)
+
+
 def retry_on_exception(
     max_retries: int = 3,
     base_delay: float = 1.0,
@@ -222,7 +234,9 @@ def retry_on_exception(
 ):
     """Decorator for retrying on specific exceptions.
 
-    Simpler alternative to ExponentialBackoffRetry for quick use.
+    Simpler alternative to ExponentialBackoffRetry for quick use. Only
+    exceptions that are instances of ``exceptions`` are retried; any other
+    exception is raised straight away.
 
     Args:
         max_retries: Maximum retry attempts
@@ -237,8 +251,8 @@ def retry_on_exception(
         ... def fetch_stock_data(symbol):
         ...     return yf.download(symbol)
     """
-    retry_strategy = ExponentialBackoffRetry(
-        max_retries=max_retries, base_delay=base_delay
+    retry_strategy = _TypedRetry(
+        exceptions, max_retries=max_retries, base_delay=base_delay
     )
 
     def decorator(func: Callable) -> Callable:

@@ -10,10 +10,10 @@ import pandas as pd
 import yfinance as yf
 import logging
 
-from ..base.fetcher import BaseFetcher
+from ..base.fetcher import CACHE_KEY_VERSION, BaseFetcher
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
-from ..exceptions import FetchError, ValidationError
+from ..exceptions import FetchError, NoDataError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -53,40 +53,37 @@ class EquityFetcher(BaseFetcher):
             DataFrame with OHLCV data
 
         Raises:
-            FetchError: If fetching fails
+            NoDataError: If no data is returned (unknown symbol or no trading)
+
+        Errors from yfinance are left to the base class to classify.
         """
-        try:
-            logger.info(
-                f"Fetching {symbol} from {start_date} to {end_date} "
-                f"(interval: {interval})"
+        logger.info(
+            f"Fetching {symbol} from {start_date} to {end_date} (interval: {interval})"
+        )
+
+        # Download data using yfinance
+        df = yf.download(
+            symbol,
+            start=start_date,
+            end=end_date,
+            interval=interval,
+            auto_adjust=self.config.auto_adjust,
+            threads=self.config.threads,
+            progress=False,
+        )
+
+        if df is None or df.empty:
+            raise NoDataError(
+                f"No data returned for {symbol} from {start_date} to {end_date}: "
+                "the symbol may not exist or there was no trading in the range"
             )
 
-            # Download data using yfinance
-            df = yf.download(
-                symbol,
-                start=start_date,
-                end=end_date,
-                interval=interval,
-                auto_adjust=self.config.auto_adjust,
-                threads=self.config.threads,
-                progress=False,
-            )
+        # Flatten multi-level columns if present (yfinance returns multi-level for single symbols)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
 
-            if df.empty:
-                raise FetchError(
-                    f"No data returned for {symbol} from {start_date} to {end_date}"
-                )
-
-            # Flatten multi-level columns if present (yfinance returns multi-level for single symbols)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-
-            logger.info(f"Fetched {len(df)} rows for {symbol}")
-            return df
-
-        except Exception as e:
-            logger.error(f"Failed to fetch {symbol}: {e}")
-            raise FetchError(f"Failed to fetch equity data: {e}") from e
+        logger.info(f"Fetched {len(df)} rows for {symbol}")
+        return df
 
     def _validate_data(self, data: pd.DataFrame) -> bool:
         """Validate equity data.
@@ -110,6 +107,9 @@ class EquityFetcher(BaseFetcher):
     ) -> str:
         """Build cache key for equity data.
 
+        The key includes every setting that changes the data returned, so
+        adjusted and unadjusted prices are never served from the same entry.
+
         Args:
             symbol: Stock ticker
             start_date: Start date
@@ -119,7 +119,11 @@ class EquityFetcher(BaseFetcher):
         Returns:
             Cache key string
         """
-        return f"equity:{symbol}:{start_date}:{end_date}:{interval}"
+        adjust = "adj" if self.config.auto_adjust else "raw"
+        return (
+            f"equity:{CACHE_KEY_VERSION}:{symbol}:{start_date}:{end_date}:"
+            f"{interval}:{adjust}"
+        )
 
     def _get_cache_metadata(
         self,

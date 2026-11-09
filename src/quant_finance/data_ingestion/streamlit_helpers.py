@@ -32,7 +32,7 @@ from .fetchers.equity import EquityFetcher
 from .fetchers.options import OptionsFetcher
 from .fetchers.fixed_income import FixedIncomeFetcher
 from .exceptions import (
-    SymbolNotFoundError,
+    NoDataError,
     RateLimitError,
     DataIngestionError,
     ValidationError,
@@ -192,9 +192,11 @@ def display_fetch_status(
             st.success("Data loaded successfully!")
             return data
 
-        except SymbolNotFoundError as e:
-            st.error(f"{error_prefix}: Symbol not found - {e}")
-            logger.error(f"Symbol not found: {e}")
+        except NoDataError as e:
+            st.error(
+                f"{error_prefix}: No data (unknown symbol or no trading in range) - {e}"
+            )
+            logger.error(f"No data: {e}")
             return None
 
         except ValidationError as e:

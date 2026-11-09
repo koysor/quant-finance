@@ -351,15 +351,12 @@ print(yields.head())
 
 | Maturity | Yahoo Symbol | Description |
 |----------|-------------|-------------|
-| `3M` | `^IRX` | 13-week Treasury bill |
-| `6M` | `^IRX` | 6-month Treasury (approximated via 13-week) |
-| `1Y` | `^IRX` | 1-year Treasury (approximated via 13-week) |
-| `2Y` | `^FVX` | 2-year Treasury (approximated via 5-year index) |
+| `3M` | `^IRX` | 13-week Treasury bill (discount basis) |
 | `5Y` | `^FVX` | 5-year Treasury yield |
 | `10Y` | `^TNX` | 10-year Treasury yield |
 | `30Y` | `^TYX` | 30-year Treasury yield |
 
-> **Note:** Some shorter maturities (6M, 1Y, 2Y) are approximations because Yahoo Finance does not provide dedicated indices for every tenor. The 3M, 5Y, 10Y, and 30Y are the most accurate.
+> **Note:** Yields are quoted in percent (4.25 means 4.25%). Yahoo Finance has no index for the 6M, 1Y or 2Y tenors, so they are not offered: asking for any maturity outside this table raises `ValidationError`. For those tenors use another source, such as FRED (`DGS6MO`, `DGS1`, `DGS2`).
 
 **Quantitative finance use cases:**
 
@@ -369,7 +366,7 @@ print(yields.head())
 | **Bond Pricing / Valuation** | All | Discount future cash flows to present value |
 | **Duration & Convexity** | Multiple | Measure interest rate sensitivity of fixed income portfolios |
 | **Interest Rate VaR** | 10Y, 30Y | Estimate potential losses from yield movements |
-| **Yield Spread Analysis** | 2Y, 10Y | Monitor the 2s10s spread as a recession indicator |
+| **Yield Spread Analysis** | 3M, 10Y | Monitor the 3m10y spread as a recession indicator |
 | **Discount Curve Construction** | All | Bootstrap a zero-coupon curve for derivatives pricing |
 | **Fixed Income Backtesting** | All | Test bond trading strategies against historical yield data |
 | **Macro Factor Models** | 10Y, 30Y | Use yield levels and changes as factors in multi-asset models |
@@ -402,7 +399,7 @@ List all supported maturities.
 ```python
 maturities = fetcher.get_available_maturities()
 print(f"Available: {maturities}")
-# ['3M', '6M', '1Y', '2Y', '5Y', '10Y', '30Y']
+# ['3M', '5Y', '10Y', '30Y']
 ```
 
 ---
@@ -462,7 +459,7 @@ manager.auto_cleanup_if_needed(max_expired_ratio=0.2, min_expired_count=10)
 
 | Table | Stored By | Key Format |
 |-------|-----------|------------|
-| `equity_cache` | `EquityFetcher` | `equity:{symbol}:{start}:{end}:{interval}` |
+| `equity_cache` | `EquityFetcher` | `equity:v2:{symbol}:{start}:{end}:{interval}:{adj\|raw}` |
 | `options_cache` | `OptionsFetcher` | `options:{symbol}:{expiration}` |
 | `fixed_income_cache` | `FixedIncomeFetcher` | `fixedincome:{maturities}:{start}:{end}` |
 
@@ -618,7 +615,8 @@ The package provides a custom exception hierarchy for granular error handling:
 ```
 DataIngestionError (base)
 ├── FetchError               — General fetch failure (network, API)
-│   ├── SymbolNotFoundError  — Ticker symbol not recognised
+│   ├── NoDataError          — Request succeeded but returned no data
+│   │   └── SymbolNotFoundError — Ticker symbol not recognised
 │   └── RateLimitError       — API rate limit exceeded
 ├── CacheError               — Cache read/write failure
 ├── ValidationError          — Data quality check failure
@@ -628,7 +626,7 @@ DataIngestionError (base)
 ```python
 from quant_finance.data_ingestion import (
     EquityFetcher,
-    SymbolNotFoundError,
+    NoDataError,
     ValidationError,
     RateLimitError,
     FetchError,
@@ -638,9 +636,11 @@ from quant_finance.data_ingestion import (
 fetcher = EquityFetcher()
 
 try:
-    df = fetcher.fetch_historical("INVALID_SYMBOL", "2024-01-01", "2024-12-31")
-except SymbolNotFoundError as e:
-    print(f"Symbol not found: {e}")
+    df = fetcher.fetch_historical("ZZZZZZ", "2024-01-01", "2024-12-31")
+except NoDataError as e:
+    # Yahoo Finance returns an empty frame for an unknown ticker, which looks
+    # the same as a range with no trading; catches SymbolNotFoundError too
+    print(f"No data (unknown symbol or no trading in range): {e}")
 except ValidationError as e:
     print(f"Invalid input or data quality failure: {e}")
 except RateLimitError as e:
@@ -659,7 +659,9 @@ Automatic rate limiting using the token bucket algorithm prevents excessive API 
 
 ```python
 # Default: 2 requests/second with burst of 10
-# Automatically applied to all fetcher calls
+# Automatically applied to all fetcher calls, including each retry attempt.
+# Fetchers with the same settings share one limiter per process, so creating
+# a new fetcher per request does not get round the limit.
 
 fetcher = EquityFetcher()
 
@@ -762,7 +764,11 @@ result = retry_strategy.execute(
 - Server errors (HTTP 500, 502, 503, 504)
 
 **Non-retryable errors** (fail immediately):
-- `ValidationError`, `SymbolNotFoundError`
+- `ValidationError`, `NoDataError` (including `SymbolNotFoundError`)
+
+Inside the fetchers, errors are classified on every attempt, before the retry
+logic decides whether to try again, and each attempt takes its own rate-limit
+token.
 
 ### Cache Bypass
 

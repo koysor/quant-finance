@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from ..base.fetcher import BaseFetcher
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
-from ..exceptions import FetchError, ValidationError
+from ..exceptions import NoDataError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,13 @@ class FixedIncomeFetcher(BaseFetcher):
         ... )
     """
 
-    # Yahoo Finance symbols for treasury yields
+    # Yahoo Finance symbols for treasury yields. Only tenors with their own
+    # index are listed: mapping a tenor to another tenor's series (as 2Y to
+    # the 5-year index) would put wrong numbers under the right label.
+    # Values are quoted in percent (4.25 means 4.25%). ^IRX is the 13-week
+    # bill rate on a discount basis; the others are bond-equivalent yields.
     TREASURY_SYMBOLS = {
         "3M": "^IRX",  # 13-week treasury bill
-        "6M": "^IRX",  # Using same as 3M (approximate)
-        "1Y": "^IRX",  # Using same as 3M (approximate)
-        "2Y": "^FVX",  # 5-year treasury (will be adjusted)
         "5Y": "^FVX",  # 5-year treasury yield
         "10Y": "^TNX",  # 10-year treasury yield
         "30Y": "^TYX",  # 30-year treasury yield
@@ -70,61 +71,58 @@ class FixedIncomeFetcher(BaseFetcher):
             DataFrame with treasury yields
 
         Raises:
-            FetchError: If fetching fails
-        """
-        try:
-            # Set default date range if not provided
-            if not end_date:
-                end_date = datetime.now().strftime("%Y-%m-%d")
-            if not start_date:
-                start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+            ValidationError: If a maturity is not supported
+            NoDataError: If no data is returned for any maturity
 
-            logger.info(
-                f"Fetching treasury yields for {maturities} "
-                f"from {start_date} to {end_date}"
+        Errors from yfinance are left to the base class to classify.
+        """
+        _check_maturities(maturities)
+
+        # Set default date range if not provided
+        if not end_date:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+        if not start_date:
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+
+        logger.info(
+            f"Fetching treasury yields for {maturities} from {start_date} to {end_date}"
+        )
+
+        # Fetch data for each maturity
+        data_frames = {}
+
+        for maturity in maturities:
+            symbol = self.TREASURY_SYMBOLS[maturity]
+
+            df = yf.download(
+                symbol,
+                start=start_date,
+                end=end_date,
+                interval="1d",
+                auto_adjust=True,
+                threads=False,
+                progress=False,
             )
 
-            # Fetch data for each maturity
-            data_frames = {}
+            if df is None or df.empty:
+                logger.warning(f"No data returned for {maturity} ({symbol})")
+                continue
 
-            for maturity in maturities:
-                if maturity not in self.TREASURY_SYMBOLS:
-                    logger.warning(f"Unknown maturity: {maturity}, skipping")
-                    continue
+            # Flatten multi-level columns if present
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
 
-                symbol = self.TREASURY_SYMBOLS[maturity]
+            # Use Close price as yield
+            data_frames[maturity] = df["Close"]
 
-                # Fetch data
-                df = yf.download(
-                    symbol,
-                    start=start_date,
-                    end=end_date,
-                    interval="1d",
-                    auto_adjust=True,
-                    threads=False,
-                    progress=False,
-                )
+        if not data_frames:
+            raise NoDataError(f"No treasury data returned for {maturities}")
 
-                if not df.empty:
-                    # Flatten multi-level columns if present
-                    if isinstance(df.columns, pd.MultiIndex):
-                        df.columns = df.columns.get_level_values(0)
+        # Combine into single DataFrame (concat Series horizontally)
+        result = pd.concat(data_frames, axis=1)
 
-                    # Use Close price as yield
-                    data_frames[maturity] = df["Close"]
-
-            if not data_frames:
-                raise FetchError(f"No treasury data returned for {maturities}")
-
-            # Combine into single DataFrame (concat Series horizontally)
-            result = pd.concat(data_frames, axis=1)
-
-            logger.info(f"Fetched {len(result)} rows of treasury data")
-            return result
-
-        except Exception as e:
-            logger.error(f"Failed to fetch treasury yields: {e}")
-            raise FetchError(f"Failed to fetch fixed income data: {e}") from e
+        logger.info(f"Fetched {len(result)} rows of treasury data")
+        return result
 
     def _validate_data(self, data: pd.DataFrame) -> bool:
         """Validate fixed income data.
@@ -194,14 +192,17 @@ class FixedIncomeFetcher(BaseFetcher):
         """Fetch treasury yield data.
 
         Args:
-            maturities: List of maturities ('3M', '6M', '1Y', '2Y', '5Y', '10Y', '30Y')
+            maturities: List of maturities ('3M', '5Y', '10Y', '30Y')
                        Default: ['10Y', '30Y']
             start_date: Start date in YYYY-MM-DD format (default: 1 year ago)
             end_date: End date in YYYY-MM-DD format (default: today)
             use_cache: Whether to use cached data if available
 
         Returns:
-            DataFrame with treasury yields as columns
+            DataFrame with treasury yields in percent as columns
+
+        Raises:
+            ValidationError: If a maturity is not supported or the dates are invalid
 
         Example:
             >>> fetcher = FixedIncomeFetcher()
@@ -215,6 +216,9 @@ class FixedIncomeFetcher(BaseFetcher):
         # Default maturities
         if maturities is None:
             maturities = ["10Y", "30Y"]
+
+        # Reject unsupported tenors before fetching, rather than skipping them
+        _check_maturities(maturities)
 
         # Validate date range if provided
         if start_date and end_date:
@@ -250,7 +254,7 @@ class FixedIncomeFetcher(BaseFetcher):
             date = datetime.now().strftime("%Y-%m-%d")
 
         # Fetch all maturities for the date
-        all_maturities = ["3M", "2Y", "5Y", "10Y", "30Y"]
+        all_maturities = self.get_available_maturities()
 
         # Get a small date range around the target date
         target_date = datetime.strptime(date, "%Y-%m-%d")
@@ -286,9 +290,19 @@ class FixedIncomeFetcher(BaseFetcher):
             >>> fetcher = FixedIncomeFetcher()
             >>> maturities = fetcher.get_available_maturities()
             >>> print(maturities)
-            ['3M', '2Y', '5Y', '10Y', '30Y']
+            ['3M', '5Y', '10Y', '30Y']
         """
         return list(self.TREASURY_SYMBOLS.keys())
+
+
+def _check_maturities(maturities: List[str]) -> None:
+    """Raise ValidationError if any maturity has no data source."""
+    unknown = [m for m in maturities if m not in FixedIncomeFetcher.TREASURY_SYMBOLS]
+    if unknown:
+        raise ValidationError(
+            f"Unsupported maturities {unknown}; available: "
+            f"{list(FixedIncomeFetcher.TREASURY_SYMBOLS)}"
+        )
 
     def __repr__(self) -> str:
         """String representation."""
