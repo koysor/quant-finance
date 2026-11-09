@@ -78,6 +78,7 @@ from .exceptions import (
     CacheError,
     RateLimitError,
     ValidationError,
+    NoDataError,
     SymbolNotFoundError,
     ConfigurationError,
 )
@@ -108,6 +109,7 @@ __all__ = [
     "CacheError",
     "RateLimitError",
     "ValidationError",
+    "NoDataError",
     "SymbolNotFoundError",
     "ConfigurationError",
     # Utilities

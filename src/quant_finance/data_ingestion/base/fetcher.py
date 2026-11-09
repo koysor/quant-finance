@@ -7,13 +7,80 @@ Provides the core cache-or-fetch pattern used by all data fetchers.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 import logging
+import threading
 import pandas as pd
 
 from ..config import DataIngestionConfig, get_default_config
-from ..exceptions import FetchError, ValidationError, CacheError
+from ..exceptions import (
+    CacheError,
+    DataIngestionError,
+    FetchError,
+    RateLimitError,
+    SymbolNotFoundError,
+    ValidationError,
+)
 from .cache import BaseCache
 
 logger = logging.getLogger(__name__)
+
+# Bump when the meaning of cached data changes, so older entries are no
+# longer read (they expire on their own)
+CACHE_KEY_VERSION = "v2"
+
+# One rate limiter per (rate, burst) setting, shared by every fetcher in the
+# process. A limiter per fetcher instance would not limit anything, because
+# callers such as the Streamlit helpers create a new fetcher for each request.
+_shared_limiters: dict[tuple[float, int], Any] = {}
+_shared_limiters_lock = threading.Lock()
+
+
+def _shared_rate_limiter(tokens_per_second: float, bucket_size: int) -> Any:
+    """Return the process-wide rate limiter for these settings."""
+    from ..utils.rate_limiter import TokenBucketLimiter
+
+    key = (tokens_per_second, bucket_size)
+    with _shared_limiters_lock:
+        if key not in _shared_limiters:
+            _shared_limiters[key] = TokenBucketLimiter(
+                tokens_per_second=tokens_per_second, bucket_size=bucket_size
+            )
+        return _shared_limiters[key]
+
+
+def classify_error(error: Exception) -> DataIngestionError:
+    """Convert an exception from a data source into a package exception.
+
+    Package exceptions are returned unchanged. Others are matched on their
+    message, so that the retry logic can tell errors worth retrying (rate
+    limits, server and network errors) from ones that are not (unknown symbol).
+
+    Args:
+        error: Exception raised while fetching
+
+    Returns:
+        The matching package exception, chained to the original
+    """
+    if isinstance(error, DataIngestionError):
+        return error
+
+    error_msg = str(error).lower()
+
+    converted: DataIngestionError
+    if "404" in error_msg or "not found" in error_msg or "no data found" in error_msg:
+        converted = SymbolNotFoundError(f"Symbol not found: {error}")
+    elif (
+        "429" in error_msg
+        or "rate limit" in error_msg
+        or "too many requests" in error_msg
+    ):
+        converted = RateLimitError(f"Rate limit exceeded: {error}")
+    elif any(code in error_msg for code in ["500", "502", "503", "504"]):
+        converted = FetchError(f"Server error: {error}")
+    else:
+        converted = FetchError(f"Failed to fetch data: {error}")
+
+    converted.__cause__ = error
+    return converted
 
 
 class BaseFetcher(ABC):
@@ -66,13 +133,10 @@ class BaseFetcher(ABC):
 
     @property
     def rate_limiter(self):
-        """Get rate limiter instance, lazily initialized."""
+        """Get the rate limiter shared by all fetchers with the same settings."""
         if self._rate_limiter is None:
-            from ..utils.rate_limiter import TokenBucketLimiter
-
-            self._rate_limiter = TokenBucketLimiter(
-                tokens_per_second=self.config.rate_limit_per_second,
-                bucket_size=self.config.rate_limit_burst,
+            self._rate_limiter = _shared_rate_limiter(
+                self.config.rate_limit_per_second, self.config.rate_limit_burst
             )
         return self._rate_limiter
 
@@ -177,14 +241,7 @@ class BaseFetcher(ABC):
             except CacheError as e:
                 logger.warning(f"Cache read failed: {e}, proceeding to fetch")
 
-        # Rate limit check
-        with self.rate_limiter.throttle():
-            # Fetch with retry
-            try:
-                data = self.retry_strategy.execute(self._fetch_impl, **kwargs)
-            except Exception as e:
-                self._handle_fetch_error(e)
-                raise
+        data = self._fetch_with_retry(**kwargs)
 
         # Validate data if enabled
         if self.config.validate_data:
@@ -223,43 +280,33 @@ class BaseFetcher(ABC):
         """
         return {}
 
-    def _handle_fetch_error(self, error: Exception) -> None:
-        """Convert API errors to custom exceptions.
+    def _fetch_with_retry(self, **kwargs: Any) -> Any:
+        """Call _fetch_impl with rate limiting and retries.
+
+        Each attempt takes its own rate-limit token, and errors are
+        classified before the retry logic sees them, so unknown symbols and
+        empty responses fail at once while transient errors are retried.
 
         Args:
-            error: Original exception from API
+            **kwargs: Arguments passed to _fetch_impl
+
+        Returns:
+            Whatever _fetch_impl returns
 
         Raises:
-            SymbolNotFoundError: For 404 errors
-            RateLimitError: For rate limit errors
-            FetchError: For other errors
+            DataIngestionError: The classified error from the last attempt
         """
-        from ..exceptions import SymbolNotFoundError, RateLimitError
 
-        error_msg = str(error).lower()
+        def attempt() -> Any:
+            with self.rate_limiter.throttle():
+                try:
+                    return self._fetch_impl(**kwargs)
+                except DataIngestionError:
+                    raise
+                except Exception as e:
+                    raise classify_error(e) from e
 
-        # Check for symbol not found
-        if (
-            "404" in error_msg
-            or "not found" in error_msg
-            or "no data found" in error_msg
-        ):
-            raise SymbolNotFoundError(f"Symbol not found: {error}") from error
-
-        # Check for rate limit
-        if (
-            "429" in error_msg
-            or "rate limit" in error_msg
-            or "too many requests" in error_msg
-        ):
-            raise RateLimitError(f"Rate limit exceeded: {error}") from error
-
-        # Check for server errors
-        if any(code in error_msg for code in ["500", "502", "503", "504"]):
-            raise FetchError(f"Server error: {error}") from error
-
-        # Generic fetch error
-        raise FetchError(f"Failed to fetch data: {error}") from error
+        return self.retry_strategy.execute(attempt)
 
     def invalidate_cache(self, **kwargs) -> None:
         """Invalidate cache for specific parameters.
