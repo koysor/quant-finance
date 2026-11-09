@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from quant_finance.stochastic.paths import random_walk_paths
 
-st.set_page_config(page_title="Martingales", page_icon="🎲", layout="wide")
+st.set_page_config(page_title="Martingales", page_icon="📊", layout="wide")
 st.header("Martingales")
 
 st.write(
@@ -107,14 +107,21 @@ if st.button("Run Simulation"):
 
 st.markdown("#### Martingales in Finance")
 st.write("""
-    In the context of efficient markets, discounted asset prices are often modeled as martingales 
-    under a **risk-neutral probability measure**. This is a fundamental concept in derivative pricing, 
-    such as the Black-Scholes model.
-    
+    In derivative pricing, discounted asset prices are modelled as martingales under a
+    **risk-neutral probability measure**. This is the foundation of models such as Black-Scholes.
+
     Key properties include:
-    - **No-Arbitrage:** If prices are martingales, there are no risk-free profit opportunities.
-    - **Unbiasedness:** The current price is the best predictor of future prices (under the risk-neutral measure).
-    - **Stopping Time Theorem:** You cannot increase your expected wealth by choosing when to stop playing a martingale.
+    - **No-Arbitrage:** The Fundamental Theorem of Asset Pricing states that a market has no arbitrage
+      if and only if there is a probability measure, equivalent to the real-world one, under which
+      discounted asset prices are martingales. It is the absence of arbitrage that guarantees this
+      measure exists, and then any derivative can be priced as a discounted expected payoff under it.
+    - **Unbiasedness:** Under the risk-neutral measure, today's discounted price is the expected value
+      of the discounted future price. Under the real-world measure prices generally have a drift,
+      because investors demand a risk premium.
+    - **Optional Stopping Theorem:** You cannot increase your expected wealth by choosing when to stop
+      playing a martingale, provided the stopping rule is reasonable: for example, the stopping time
+      is bounded, or the game's values are bounded up to it. Without such a condition the theorem fails,
+      as the doubling strategy shows: it wins £1 with probability 1, but only with unlimited time and credit.
     """)
 
 st.caption("Doob, J. L. (1953). 'Stochastic Processes.' John Wiley & Sons.")

@@ -2,8 +2,10 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+from quant_finance.options.arbitrage import static_arbitrage_violations
 from quant_finance.options.payoffs import OptionLeg, strategy_payoff
-from quant_finance.pricing.black_scholes import black_scholes_call
+from quant_finance.pricing.black_scholes import black_scholes_call, black_scholes_price
+from quant_finance.pricing.parity import parity_difference
 
 st.set_page_config(page_title="Volatility Spreads", page_icon="📈", layout="wide")
 st.header("Volatility Spreads")
@@ -39,6 +41,63 @@ with col1:
         help="Current price of the underlying stock.",
     )
 
+RATE = 0.05  # Risk-free rate used for pricing throughout the page
+
+# Strategies whose options all share one expiry: their premiums default to
+# Black-Scholes prices and are checked for static arbitrage
+SAME_EXPIRY = {
+    "Straddle",
+    "Strangle",
+    "Butterfly",
+    "Condor",
+    "Ratio Spread",
+    "Christmas Tree",
+}
+if strategy in SAME_EXPIRY:
+    with col2:
+        market_vol = (
+            st.slider(
+                "Volatility for Default Premiums (%)",
+                5,
+                100,
+                25,
+                help="Each premium below defaults to its Black-Scholes price at this volatility, "
+                f"the expiry below and a {RATE:.0%} risk-free rate. Change a premium to see the "
+                "effect of mispricing.",
+            )
+            / 100
+        )
+        days_to_expiry = st.slider("Days to Expiry", 1, 365, 60)
+    expiry_years = days_to_expiry / 365
+
+
+def premium_input(label: str, option_type: str, strike: float) -> float:
+    """Premium input defaulting to the Black-Scholes price of the option."""
+    fair = float(
+        black_scholes_price(
+            spot_price, strike, expiry_years, RATE, market_vol, option_type=option_type
+        )
+    )
+    return st.number_input(
+        label,
+        min_value=0.0,
+        value=round(fair, 2),
+        step=0.5,
+        help=f"Black-Scholes price: {fair:.2f}",
+    )
+
+
+def warn_if_arbitrage(strikes: list[float], premiums: list[float]) -> None:
+    """Show a warning for each static arbitrage in a set of call premiums."""
+    # Allow for the default premiums being rounded to the penny
+    violations = static_arbitrage_violations(strikes, premiums, "call", tol=0.015)
+    if violations:
+        st.warning(
+            "**These premiums allow arbitrage**, so no market would quote them:\n- "
+            + "\n- ".join(violations)
+        )
+
+
 # Strategy-specific inputs and calculations
 if strategy == "Straddle":
     with col1:
@@ -50,10 +109,22 @@ if strategy == "Straddle":
             help="Strike price for both call and put (typically ATM).",
         )
     with col2:
-        call_premium = st.number_input(
-            "Call Premium", min_value=0.0, value=5.0, step=0.5
+        call_premium = premium_input("Call Premium", "call", strike)
+        put_premium = premium_input("Put Premium", "put", strike)
+
+    # A call and a put on the same strike and expiry must satisfy put-call parity
+    parity_gap = float(
+        parity_difference(
+            call_premium, put_premium, spot_price, strike, expiry_years, RATE
         )
-        put_premium = st.number_input("Put Premium", min_value=0.0, value=5.0, step=0.5)
+    )
+    if abs(parity_gap) > 0.015:  # allow for premiums rounded to the penny
+        cheap, dear = ("put", "call") if parity_gap > 0 else ("call", "put")
+        st.warning(
+            f"**These premiums break put-call parity** by £{abs(parity_gap):.2f}: the {dear} "
+            f"is dear relative to the {cheap}. Selling the {dear} and buying the {cheap}, "
+            "hedged with the stock and cash, would lock in that amount."
+        )
 
     total_premium = call_premium + put_premium
     stock_prices = np.linspace(strike * 0.5, strike * 1.5, 200)
@@ -149,10 +220,8 @@ elif strategy == "Strangle":
             help="Strike price for the call option (OTM).",
         )
     with col2:
-        call_premium = st.number_input(
-            "Call Premium", min_value=0.0, value=3.0, step=0.5
-        )
-        put_premium = st.number_input("Put Premium", min_value=0.0, value=3.0, step=0.5)
+        call_premium = premium_input("Call Premium", "call", call_strike)
+        put_premium = premium_input("Put Premium", "put", put_strike)
 
     total_premium = call_premium + put_premium
     stock_prices = np.linspace(put_strike * 0.5, call_strike * 1.5, 200)
@@ -264,16 +333,16 @@ elif strategy == "Butterfly":
             step=1.0,
         )
     with col2:
-        lower_premium = st.number_input(
-            "Lower Call Premium (Buy)", min_value=0.0, value=12.0, step=0.5
+        lower_premium = premium_input("Lower Call Premium (Buy)", "call", lower_strike)
+        middle_premium = premium_input(
+            "Middle Call Premium (Sell x2)", "call", middle_strike
         )
-        middle_premium = st.number_input(
-            "Middle Call Premium (Sell x2)", min_value=0.0, value=6.0, step=0.5
-        )
-        upper_premium = st.number_input(
-            "Upper Call Premium (Buy)", min_value=0.0, value=2.0, step=0.5
-        )
+        upper_premium = premium_input("Upper Call Premium (Buy)", "call", upper_strike)
 
+    warn_if_arbitrage(
+        [lower_strike, middle_strike, upper_strike],
+        [lower_premium, middle_premium, upper_premium],
+    )
     net_debit = lower_premium - 2 * middle_premium + upper_premium
     stock_prices = np.linspace(lower_strike * 0.7, upper_strike * 1.3, 200)
 
@@ -367,19 +436,12 @@ elif strategy == "Condor":
             "Strike K4 (Highest)", min_value=1.0, value=115.0, step=1.0
         )
     with col2:
-        p1 = st.number_input(
-            "K1 Call Premium (Buy)", min_value=0.0, value=16.0, step=0.5
-        )
-        p2 = st.number_input(
-            "K2 Call Premium (Sell)", min_value=0.0, value=8.0, step=0.5
-        )
-        p3 = st.number_input(
-            "K3 Call Premium (Sell)", min_value=0.0, value=4.0, step=0.5
-        )
-        p4 = st.number_input(
-            "K4 Call Premium (Buy)", min_value=0.0, value=1.0, step=0.5
-        )
+        p1 = premium_input("K1 Call Premium (Buy)", "call", k1)
+        p2 = premium_input("K2 Call Premium (Sell)", "call", k2)
+        p3 = premium_input("K3 Call Premium (Sell)", "call", k3)
+        p4 = premium_input("K4 Call Premium (Buy)", "call", k4)
 
+    warn_if_arbitrage([k1, k2, k3, k4], [p1, p2, p3, p4])
     net_debit = p1 - p2 - p3 + p4
     stock_prices = np.linspace(k1 * 0.7, k4 * 1.3, 200)
 
@@ -462,12 +524,10 @@ elif strategy == "Ratio Spread":
         )
         ratio = st.selectbox("Ratio (Buy:Sell)", ["1:2", "1:3", "2:3"], index=0)
     with col2:
-        lower_premium = st.number_input(
-            "Lower Call Premium", min_value=0.0, value=8.0, step=0.5
-        )
-        upper_premium = st.number_input(
-            "Upper Call Premium", min_value=0.0, value=3.0, step=0.5
-        )
+        lower_premium = premium_input("Lower Call Premium", "call", lower_strike)
+        upper_premium = premium_input("Upper Call Premium", "call", upper_strike)
+
+    warn_if_arbitrage([lower_strike, upper_strike], [lower_premium, upper_premium])
 
     if ratio == "1:2":
         buy_qty, sell_qty = 1, 2
@@ -556,10 +616,11 @@ elif strategy == "Christmas Tree":
         k2 = st.number_input("Strike K2 (Sell 1)", min_value=1.0, value=100.0, step=1.0)
         k3 = st.number_input("Strike K3 (Sell 1)", min_value=1.0, value=105.0, step=1.0)
     with col2:
-        p1 = st.number_input("K1 Premium (Buy)", min_value=0.0, value=8.0, step=0.5)
-        p2 = st.number_input("K2 Premium (Sell)", min_value=0.0, value=5.0, step=0.5)
-        p3 = st.number_input("K3 Premium (Sell)", min_value=0.0, value=3.0, step=0.5)
+        p1 = premium_input("K1 Premium (Buy)", "call", k1)
+        p2 = premium_input("K2 Premium (Sell)", "call", k2)
+        p3 = premium_input("K3 Premium (Sell)", "call", k3)
 
+    warn_if_arbitrage([k1, k2, k3], [p1, p2, p3])
     net_debit = p1 - p2 - p3
     stock_prices = np.linspace(k1 * 0.7, k3 * 1.4, 200)
 
@@ -882,3 +943,8 @@ Loss if stock moves significantly against the position or IV collapses.
             f"**Ideal scenario:** Stock at near-term strike ({near_strike:.0f}) at near-term expiry"
         )
         st.markdown("**Max Loss:** Limited to net debit if stock falls significantly")
+
+st.caption(
+    "Natenberg, S. (2015). 'Option Volatility and Pricing', 2nd ed. McGraw-Hill. | "
+    "Hull, J.C. (2022). 'Options, Futures, and Other Derivatives', 11th ed. Pearson."
+)
