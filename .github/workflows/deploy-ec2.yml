@@ -31,7 +31,11 @@ jobs:
       - name: Check code formatting with Ruff
         run: uv run ruff format --check --diff .
 
-  build-base:
+  # Builds the base image and the four app images in one bake run (see
+  # docker/docker-bake.hcl). Each app is built on the base image from the same
+  # run, not on base:latest from the registry, so a pull request that changes
+  # dependencies is built and tested with them (pull requests push nothing).
+  build:
     needs: code-quality
     runs-on: ubuntu-latest
     permissions:
@@ -46,90 +50,35 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v6
+      - name: Build images (and push them, except for pull requests)
+        uses: docker/bake-action@v6
+        env:
+          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+          # Every image is tagged with the full commit SHA; deploy uses that tag
+          TAG: ${{ github.sha }}
+          PUSH_LATEST: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          GHA_CACHE: true
         with:
-          images: ${{ env.IMAGE_PREFIX }}/base
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push base image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: docker/Dockerfile.base
+          source: .
+          files: docker/docker-bake.hcl
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=base
-          cache-to: type=gha,mode=max,scope=base
-
-  build-and-push:
-    needs: [code-quality, build-base]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        include:
-          - app: quant-finance
-            dockerfile: docker/Dockerfile.quant-finance
-          - app: options
-            dockerfile: docker/Dockerfile.options
-          - app: fixed-income
-            dockerfile: docker/Dockerfile.fixed-income
-          - app: portfolio-management
-            dockerfile: docker/Dockerfile.portfolio-management
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BASE_IMAGE=${{ env.IMAGE_PREFIX }}/base:latest
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
   deploy:
-    needs: build-and-push
+    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # One deploy at a time: a newer deploy waits for the running one, and
+    # replaces any older deploy still waiting, so the newest commit wins
+    concurrency:
+      group: deploy-ec2
+      cancel-in-progress: false
 
     steps:
       - name: Checkout code
@@ -161,17 +110,22 @@ jobs:
 
       - name: Deploy to EC2 via SSH
         timeout-minutes: 30
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           # Sent as the ssh command (not on stdin), like appleboy/ssh-action
           # did; -n gives the remote side an empty stdin for docker exec.
-          script=$(cat <<'REMOTE'
+          # IMAGE_TAG (a commit SHA, so safe to inline) selects the images
+          # built for this commit, and the same commit's compose file.
+          script="export IMAGE_TAG=$IMAGE_TAG"$'\n'$(cat <<'REMOTE'
           set -e
 
-          # Clone or update repository (for docker-compose and Caddyfile)
+          # Clone or update repository (for docker-compose and Caddyfile), at
+          # the commit being deployed rather than whatever main is now
           cd ~/quant-finance || git clone https://github.com/koysor/quant-finance.git ~/quant-finance
           cd ~/quant-finance
           git fetch origin
-          git reset --hard origin/main
+          git reset --hard "$IMAGE_TAG"
 
           # Stop existing containers (both named project and legacy 'docker' project)
           cd docker
@@ -193,14 +147,11 @@ jobs:
           docker builder prune -af || true
           sudo rm -rf /tmp/* 2>/dev/null || true
 
-          # Pull base image first (app images share its layers)
-          docker pull ghcr.io/koysor/quant-finance/base:latest
-
-          # Pull app images (fast - only the thin app layers need downloading)
-          docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
-          docker pull ghcr.io/koysor/quant-finance/options:latest
-          docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
-          docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+          # Pull the app images built for this commit (they contain the base
+          # image's layers, which are shared and downloaded only once)
+          for app in quant-finance options fixed-income portfolio-management; do
+            docker pull "ghcr.io/koysor/quant-finance/$app:$IMAGE_TAG"
+          done
           docker pull caddy:2-alpine
 
           # Pull maths-python image (prune -af removes it since it runs outside this compose project)
@@ -209,7 +160,8 @@ jobs:
           # Pull flash cards image (same reason: it runs in its own compose project)
           docker pull ghcr.io/koysor/quant-finance-flash-cards:latest || true
 
-          # Start services with new images
+          # Start services with this commit's images (IMAGE_TAG is read by
+          # docker-compose.prod.yml)
           cd docker
           docker-compose -f docker-compose.prod.yml up -d
 
@@ -230,10 +182,12 @@ jobs:
 
       - name: Health check
         timeout-minutes: 10
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           # Sent as the ssh command (not on stdin), like appleboy/ssh-action
           # did; -n gives the remote side an empty stdin for docker exec.
-          script=$(cat <<'REMOTE'
+          script="export IMAGE_TAG=$IMAGE_TAG"$'\n'$(cat <<'REMOTE'
           set -e
           echo "Waiting for apps and Caddy to start..."
           sleep 45

@@ -53,7 +53,13 @@ Internet (HTTPS :443)
 
 ### Build and Run All Applications
 
-The app Dockerfiles depend on a shared base image that must be built first:
+To build all five images exactly as CI does (the base, then each app on top of it), use the bake file:
+
+```bash
+docker buildx bake -f docker/docker-bake.hcl --load
+```
+
+Or build step by step. The app Dockerfiles depend on a shared base image that must be built first:
 
 ```bash
 # From the repository root directory
