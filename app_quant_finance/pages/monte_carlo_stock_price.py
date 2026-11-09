@@ -22,8 +22,9 @@ st.write(
 st.markdown("#### Geometric Brownian Motion Model")
 
 st.write(
-    "Stock prices are commonly modeled using geometric Brownian motion, which assumes that stock returns "
-    "follow a normal distribution. The stock price evolution is given by:"
+    "Stock prices are commonly modelled using geometric Brownian motion, which assumes that log-returns "
+    "are normally distributed, so prices are lognormal and can never fall below zero. The stock price "
+    "evolution is given by:"
 )
 
 latex_code = r"""
@@ -102,7 +103,7 @@ if st.button("Run Monte Carlo Simulation"):
     # Simulate price paths
     prices = gbm_paths(S0, mu, sigma, T, n_steps, n_simulations, rng)
 
-    # Create visualization
+    # Create visualisation
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     # Plot 1: Sample of price paths
@@ -185,6 +186,29 @@ if st.button("Run Monte Carlo Simulation"):
         theoretical_mean = S0 * np.exp(mu * T)
         st.metric("Theoretical Mean", f"£{theoretical_mean:.2f}")
 
+    # Monte Carlo error: the sample mean is itself a random estimate
+    if n_simulations > 1:
+        standard_error = np.std(final_prices, ddof=1) / np.sqrt(n_simulations)
+        lower, upper = (
+            np.mean(final_prices) - 1.96 * standard_error,
+            np.mean(final_prices) + 1.96 * standard_error,
+        )
+        st.write(
+            f"The simulated mean is an estimate with a standard error of £{standard_error:.2f} "
+            f"(sample standard deviation / √n), so a 95% confidence interval for the true mean is "
+            f"£{lower:.2f} to £{upper:.2f}. "
+            + (
+                "The theoretical mean lies inside it."
+                if lower <= theoretical_mean <= upper
+                else "The theoretical mean lies outside it, which happens in about 1 run in 20."
+            )
+            + " The error shrinks only as 1/√n: four times as many paths halves it."
+        )
+    else:
+        st.write(
+            "Run at least two simulations to estimate the error in the simulated mean."
+        )
+
     # Risk metrics
     st.markdown("#### Risk Analysis")
 
@@ -219,14 +243,15 @@ st.markdown("#### Summary")
 st.write("""
 **Monte Carlo Simulation Properties:**
 - Each simulation generates random price paths based on the specified parameters
-- The mean of all simulations converges to the theoretical expected value
+- The mean of all simulations converges to the theoretical expected value, with an error of order 1/√n
+- Value at Risk estimated from the tail percentiles is noisier still, because few paths land in the tail
 - Higher volatility creates wider distributions of final prices
 - More simulations provide more accurate statistical estimates
 
 **Risk Management Applications:**
 - **Value at Risk (VaR):** Shows potential losses at different confidence levels
 - **Scenario Analysis:** Understand range of possible outcomes
-- **Portfolio Optimization:** Compare risk-return profiles of different assets
+- **Portfolio Optimisation:** Compare risk-return profiles of different assets
 - **Option Pricing:** Foundation for more complex derivatives pricing models
 """)
 

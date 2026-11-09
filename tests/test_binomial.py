@@ -18,7 +18,7 @@ def test_european_price_converges_to_black_scholes(option_type, S, q):
 
 
 def test_hull_american_put_example():
-    # Hull, Options, Futures, and Other Derivatives, Example 21.1:
+    # Hull, Options, Futures, and Other Derivatives (9th ed.), Example 21.1:
     # S=50, K=50, r=10%, sigma=40%, T=5 months, 5 steps gives 4.49
     price = binomial_price(50, 50, 5 / 12, 0.1, 0.4, 5, "put", american=True)
 

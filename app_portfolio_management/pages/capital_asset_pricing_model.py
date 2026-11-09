@@ -60,13 +60,18 @@ with st.expander(label="Beta Formula", expanded=True):
     st.code(latex_beta, language="latex")
     st.latex(latex_beta)
 
-st.write("""
+st.write(r"""
 **Interpreting Beta:**
-- **β = 1**: Asset moves with the market (e.g., index funds)
-- **β > 1**: Asset is more volatile than the market (e.g., growth stocks, tech)
-- **β < 1**: Asset is less volatile than the market (e.g., utilities, consumer staples)
-- **β = 0**: Asset has no correlation with market (e.g., risk-free asset)
-- **β < 0**: Asset moves opposite to market (rare, e.g., some gold stocks)
+- **β = 1**: On average the asset moves one-for-one with the market (e.g., a broad index fund)
+- **β > 1**: The asset amplifies market moves, so it carries more systematic risk (e.g., many growth and tech stocks)
+- **β < 1**: The asset dampens market moves, so it carries less systematic risk (e.g., utilities, consumer staples)
+- **β = 0**: The asset's returns are uncorrelated with the market (e.g., the risk-free asset)
+- **β < 0**: The asset tends to move against the market (rare, e.g., some gold stocks)
+
+Beta measures **systematic** (market) risk only, not total volatility. A stock with β < 1 can still be far
+more volatile than the market if most of its risk is idiosyncratic: $\beta_i = \rho_{i,m} \sigma_i / \sigma_m$, so a low correlation
+with the market gives a low beta however large $\sigma_i$ is. CAPM rewards only systematic risk, because
+idiosyncratic risk can be diversified away.
 """)
 
 

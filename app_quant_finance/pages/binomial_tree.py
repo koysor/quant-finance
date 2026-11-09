@@ -10,14 +10,12 @@ def binomial_tree(n: int, p: float) -> nx.DiGraph:
     """
     Generates a NetworkX binomial tree.
 
-    Each node represents a state (level, successes).
-    Each edge represents a transition with a probability.
-    The tree is built level by level, where each node has two children:
-    one for success and one for failure.
-    The root node is (0, 0), representing the initial state with 0 successes.
-    The tree is built until level n, where n is the number of trials.
-    The probability of success is p, and the probability of failure is 1 - p.
-    The function returns a directed graph (DiGraph) representing the binomial tree.
+    Each node represents a state (level, successes) and each edge a
+    transition with its probability: p for a success, 1 - p for a failure.
+    The tree recombines (a success then a failure reaches the same node as a
+    failure then a success), so level k has k + 1 nodes and the tree has
+    (n + 1)(n + 2) / 2 nodes in all. It is built one level at a time, so each
+    node is expanded once.
 
     Parameters:
     n (int): Number of trials.
@@ -27,21 +25,13 @@ def binomial_tree(n: int, p: float) -> nx.DiGraph:
     G (networkx.DiGraph): Directed graph representing the binomial tree.
     """
     G = nx.DiGraph()
-    nodes = [(0, 0)]  # (level, successes)
-    G.add_node((0, 0))
+    G.add_node((0, 0))  # (level, successes)
 
-    while nodes:
-        level, successes = nodes.pop(0)
-        if level < n:
-            # Probability of success
-            next_success = (level + 1, successes + 1)
-            G.add_edge((level, successes), next_success, probability=p)
-            nodes.append(next_success)
-
-            # Probability of failure
-            next_failure = (level + 1, successes)
-            G.add_edge((level, successes), next_failure, probability=1 - p)
-            nodes.append(next_failure)
+    for level in range(n):
+        for successes in range(level + 1):
+            node = (level, successes)
+            G.add_edge(node, (level + 1, successes + 1), probability=p)
+            G.add_edge(node, (level + 1, successes), probability=1 - p)
 
     return G
 
@@ -50,14 +40,13 @@ def display_binomial_tree(n: int, p: float) -> None:
     """Generates and displays the binomial tree using Matplotlib in Streamlit."""
 
     G = binomial_tree(n, p)
-    st.write(G)
     pos = {}
     for node in G.nodes():
         level, successes = node
         pos[node] = (
             level,
             successes - level / 2,
-        )  # Adjust y-position for better visualization
+        )  # Adjust y-position for better visualisation
 
     edge_labels = nx.get_edge_attributes(G, "probability")
     formatted_edge_labels = {k: f"{v:.2f}" for k, v in edge_labels.items()}
@@ -96,3 +85,8 @@ Each node is labeled (i, j) where:
 - Two edges per node: one for an up move and one for a down move.
         """)
 display_binomial_tree(n, p)
+
+st.caption(
+    "Cox, J.C., Ross, S.A. & Rubinstein, M. (1979). 'Option Pricing: A Simplified Approach.' "
+    "Journal of Financial Economics, 7(3), 229–263."
+)
