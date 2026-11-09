@@ -213,6 +213,7 @@ ax.set_ylim(y_min, y_max)
 
 plt.tight_layout()
 st.pyplot(fig)
+plt.close(fig)
 
 
 st.markdown("#### Portfolio Statistics")

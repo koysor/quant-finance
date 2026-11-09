@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 
 from quant_finance.stochastic.paths import gbm_paths
 
+# About 16 MB per (paths, steps) float64 array
+MAX_SIMULATED_POINTS = 2_000_000
+
 st.set_page_config(
     page_title="Monte Carlo Simulation - Stock Price Random Walk",
     page_icon="📊",
@@ -76,8 +79,17 @@ with col2:
     n_steps = st.number_input(
         "Number of Time Steps", min_value=50, max_value=1000, value=252, step=1
     )
+    # Cap paths x steps so the simulated prices (8 bytes each, plus the
+    # random draws) stay well inside the app container's memory limit
+    max_simulations = min(10_000, MAX_SIMULATED_POINTS // n_steps)
     n_simulations = st.number_input(
-        "Number of Simulations", min_value=1, max_value=10000, value=1000, step=100
+        "Number of Simulations",
+        min_value=1,
+        max_value=max_simulations,
+        value=min(1000, max_simulations),
+        step=100,
+        help=f"Up to {max_simulations:,} at {n_steps} time steps: paths × steps "
+        f"is capped at {MAX_SIMULATED_POINTS:,} to limit memory use.",
     )
 
 # Generate Monte Carlo simulations
@@ -153,6 +165,7 @@ if st.button("Run Monte Carlo Simulation"):
 
     plt.tight_layout()
     st.pyplot(fig)
+    plt.close(fig)
 
     # Display statistics
     st.markdown("#### Simulation Results")

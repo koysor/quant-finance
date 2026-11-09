@@ -31,7 +31,7 @@ st.write(
 st.write("**Delta-neutral** means that the position is completely hedged.")
 
 st.write(
-    """E.g., if an investor is short 1,000 call options, they will need to be long 700 ($0.7 \cdot 1000$) shares of the underlying."""
+    r"""E.g., if an investor is short 1,000 call options, they will need to be long 700 ($0.7 \cdot 1000$) shares of the underlying."""
 )
 
 st.write(

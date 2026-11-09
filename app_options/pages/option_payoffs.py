@@ -112,6 +112,7 @@ col_chart, col_text = st.columns([3, 2])
 
 with col_chart:
     st.pyplot(fig)
+    plt.close(fig)
 
 with col_text:
     st.markdown("#### Payoff Formulas")

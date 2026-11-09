@@ -263,6 +263,7 @@ with col1:
     plt.colorbar(im1, ax=ax1, label="Correlation")
     ax1.set_title("Correlation Matrix")
     st.pyplot(fig1)
+    plt.close(fig1)
 
 with col2:
     st.markdown("**Covariance Matrix (Σ)**")
@@ -278,6 +279,7 @@ with col2:
     plt.colorbar(im2, ax=ax2, label="Covariance")
     ax2.set_title("Covariance Matrix")
     st.pyplot(fig2)
+    plt.close(fig2)
 
 st.write(
     "**Covariance from correlation:** $\\sigma_{ij} = \\rho_{ij} \\cdot \\sigma_i \\cdot \\sigma_j$"

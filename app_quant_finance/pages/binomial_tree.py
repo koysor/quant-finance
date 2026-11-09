@@ -80,6 +80,7 @@ def display_binomial_tree(n: int, p: float) -> None:
     ax.set_xlabel("Level")
     ax.set_ylabel("Number of Successes")
     st.pyplot(fig)
+    plt.close(fig)
 
 
 n = st.slider("Number of Trials (n)", min_value=1, max_value=5, value=2)

@@ -106,6 +106,7 @@ if strategy == "Straddle":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -210,6 +211,7 @@ elif strategy == "Strangle":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -330,6 +332,7 @@ elif strategy == "Butterfly":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -420,6 +423,7 @@ elif strategy == "Condor":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -520,6 +524,7 @@ elif strategy == "Ratio Spread":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -595,6 +600,7 @@ elif strategy == "Christmas Tree":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -679,6 +685,7 @@ elif strategy == "Calendar Spread":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -761,6 +768,7 @@ elif strategy == "Time Butterfly":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
@@ -848,6 +856,7 @@ elif strategy == "Diagonal Spreads":
 
     with chart_col:
         st.pyplot(fig)
+        plt.close(fig)
 
     with text_col:
         st.markdown("#### Strategy Explanation")
