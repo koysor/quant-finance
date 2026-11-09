@@ -74,29 +74,30 @@ source .venv/bin/activate && uv run streamlit run app_portfolio_management/portf
 ### Code Quality
 ```bash
 # Format code
-uv run black .
+uv run ruff format .
 
 # Lint code
 uv run ruff check .
 
-# Format check (matches CI)
-uv run ruff format .
+# Format and lint checks (match CI)
+uv run ruff format --check .
+uv run ruff check .
 
 # Type check the library (matches CI)
 uv run mypy src/quant_finance
 
-# Pre-commit hooks (automatically runs black, ruff check, and ruff format on commit)
+# Pre-commit hooks (automatically run ruff check and ruff format on commit)
 uv run pre-commit install        # Setup hooks (already done)
 uv run pre-commit run --all-files  # Run hooks manually on all files
 ```
 
 ### CI/CD
 - **GitHub Actions** workflows:
-  - `code-quality.yml` - Validates black formatting, ruff linting and mypy types on push/PR
+  - `code-quality.yml` - Validates ruff formatting, ruff linting and mypy types on push/PR
   - `tests.yml` - Runs pytest on push/PR
   - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
   - `deploy-marimo.yml` - Exports marimo notebooks to WASM and deploys to GitHub Pages
-- **Pre-commit hooks** - Local code quality enforcement (detect-secrets, black, ruff check, ruff format)
+- **Pre-commit hooks** - Local code quality enforcement (detect-secrets, ruff check, ruff format)
 
 ### Environment
 - Python 3.14 required (see `.python-version`)
@@ -158,9 +159,8 @@ uv run pre-commit run --all-files  # Run hooks manually on all files
 - **jupyter** / **marimo** - Interactive notebook environments
 - **pytest** - Testing framework
 - **mypy** - Static type checking for `src/quant_finance/`
-- **black** - Code formatting
-- **ruff** - Linting
-- **pre-commit** - Git hooks for code quality (auto-runs black and ruff on commit)
+- **ruff** - Formatting (`ruff format`, Black-compatible style) and linting
+- **pre-commit** - Git hooks for code quality (auto-runs ruff on commit)
 
 ## Code Patterns
 

@@ -88,7 +88,7 @@ The bare root (`https://koysor.duckdns.org/`) permanently redirects to `/quant/`
 
 Deployment is automated via GitHub Actions (`.github/workflows/deploy-ec2.yml`):
 
-1. **Code Quality Checks** - Black formatting and Ruff linting run on GitHub-hosted runners
+1. **Code Quality Checks** - Ruff formatting and linting run on GitHub-hosted runners
 2. **Build & Push Images** - Docker images are built in parallel on GitHub runners and pushed to GitHub Container Registry (GHCR)
 3. **SSH Deployment** - Connects to EC2 via SSH using `appleboy/ssh-action`
 4. **Pull Images** - EC2 pulls pre-built images from GHCR + Caddy from Docker Hub (no building on EC2)
