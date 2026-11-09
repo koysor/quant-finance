@@ -1,5 +1,7 @@
 # Docker Compose for production deployment on EC2
-# Uses pre-built images from GitHub Container Registry (GHCR)
+# Uses pre-built images from GitHub Container Registry (GHCR). The deploy
+# workflow sets IMAGE_TAG to the commit SHA being deployed; without it the
+# latest images are used.
 # Caddy reverse proxy provides automatic HTTPS via Let's Encrypt
 
 name: quant-finance
@@ -27,7 +29,7 @@ services:
       - portfolio-management
 
   quant-finance:
-    image: ghcr.io/koysor/quant-finance/quant-finance:latest
+    image: ghcr.io/koysor/quant-finance/quant-finance:${IMAGE_TAG:-latest}
     expose:
       - "8501"
     restart: unless-stopped
@@ -41,7 +43,7 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
 
   options:
-    image: ghcr.io/koysor/quant-finance/options:latest
+    image: ghcr.io/koysor/quant-finance/options:${IMAGE_TAG:-latest}
     expose:
       - "8501"
     restart: unless-stopped
@@ -55,7 +57,7 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
 
   fixed-income:
-    image: ghcr.io/koysor/quant-finance/fixed-income:latest
+    image: ghcr.io/koysor/quant-finance/fixed-income:${IMAGE_TAG:-latest}
     expose:
       - "8501"
     restart: unless-stopped
@@ -69,7 +71,7 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
 
   portfolio-management:
-    image: ghcr.io/koysor/quant-finance/portfolio-management:latest
+    image: ghcr.io/koysor/quant-finance/portfolio-management:${IMAGE_TAG:-latest}
     expose:
       - "8501"
     restart: unless-stopped

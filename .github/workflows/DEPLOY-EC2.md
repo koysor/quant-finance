@@ -82,46 +82,30 @@ uv run ruff format --check --diff .
 
 **Best practice:** Code quality checks are the first job because they're fast (~10 seconds) and catch issues early. No point building Docker images if the code has linting errors.
 
-## Job 2: Build Base
+## Job 2: Build
 
 ```yaml
-build-base:
+build:
   needs: code-quality
-  runs-on: ubuntu-latest
-```
-
-This job builds the shared base Docker image containing all Python dependencies and the `src/` package. App images built in Job 3 extend this base, so they only add their thin application layer.
-
-**Why a separate base job:** The base image (with heavy deps like NumPy, SciPy, Pandas) takes ~3 minutes to build. Building it once and caching it means the four parallel app builds in Job 3 each take ~30 seconds instead of ~5 minutes.
-
-The base image is pushed to `ghcr.io/koysor/quant-finance/base:latest`.
-
-## Job 3: Build and Push
-
-```yaml
-build-and-push:
-  needs: [code-quality, build-base]
   runs-on: ubuntu-latest
   permissions:
     contents: read
     packages: write
 ```
 
-### Job Dependencies
+This job builds all five images (the shared base and the four apps) in a single [Buildx bake](https://docs.docker.com/build/bake/) run, defined in `docker/docker-bake.hcl`. The base image holds the Python dependencies and the `src/` package; each app image adds only its thin application layer on top.
 
-```yaml
-needs: [code-quality, build-base]
-```
+### Why one bake run
 
-**Why:** Only runs after both code quality passes and the base image is built. This ensures the app images have a valid base to extend, and prevents wasting compute resources on linting failures.
+Each app is built `FROM` the base image **of the same run**: the bake file passes the `base` target to the apps as a named build context (`contexts = { quant-finance-base = "target:base" }`). The apps are never built on a base image pulled from the registry.
+
+Building the apps on `base:latest` from the registry had two flaws:
+- **Pull requests tested the wrong base.** Pull requests push nothing, so their apps were built on the base from the last merge to main. A pull request that changed dependencies (for example from Dependabot, which cannot push packages) never built or tested its apps with them.
+- **Concurrent builds raced.** Two merges in quick succession could build one commit's apps on the other's base.
+
+BuildKit builds the base once and the four apps in parallel, so one job is no slower than the previous five.
 
 ### Permissions
-
-```yaml
-permissions:
-  contents: read
-  packages: write
-```
 
 | Permission | Purpose |
 |------------|---------|
@@ -130,118 +114,86 @@ permissions:
 
 **Best practice:** Follow the principle of least privilege. Only request the permissions the job actually needs. This limits the blast radius if a workflow is compromised.
 
-### Matrix Strategy
-
-```yaml
-strategy:
-  matrix:
-    include:
-      - app: quant-finance
-        dockerfile: docker/Dockerfile.quant-finance
-      - app: options
-        dockerfile: docker/Dockerfile.options
-      - app: fixed-income
-        dockerfile: docker/Dockerfile.fixed-income
-      - app: portfolio-management
-        dockerfile: docker/Dockerfile.portfolio-management
-```
-
-**Why:** Matrix builds run in parallel. Four separate runners build four images simultaneously, reducing total build time from ~20 minutes (sequential) to ~5 minutes (parallel).
-
-**Best practice:** Use matrix strategies when you have multiple similar tasks. It's more maintainable than duplicating job definitions and automatically parallelises.
-
 ### Key Steps
-
-#### Docker Buildx Setup
-
-```yaml
-- uses: docker/setup-buildx-action@v4
-```
-
-**Why:** Buildx enables advanced features:
-- Multi-platform builds (if needed later)
-- Better layer caching
-- BuildKit optimisations for faster builds
 
 #### GHCR Authentication
 
 ```yaml
 - uses: docker/login-action@v4
+  if: github.event_name != 'pull_request'
   with:
     registry: ${{ env.REGISTRY }}
     username: ${{ github.actor }}
     password: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-| Parameter | Value | Purpose |
-|-----------|-------|---------|
-| `registry` | `ghcr.io` | Target registry |
-| `username` | `${{ github.actor }}` | GitHub username of whoever triggered the workflow |
-| `password` | `${{ secrets.GITHUB_TOKEN }}` | Automatic token provided by GitHub Actions |
+Pull requests push nothing, so they skip the login.
 
 **Best practice:** Use `GITHUB_TOKEN` instead of personal access tokens. It's automatically provided, scoped to the repository, and expires after the workflow completes.
-
-#### Image Tagging
-
-```yaml
-- uses: docker/metadata-action@v6
-  with:
-    images: ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}
-    tags: |
-      type=sha,prefix=
-      type=raw,value=latest,enable={{is_default_branch}}
-```
-
-This generates two tags for each image:
-
-| Tag | Example | Purpose |
-|-----|---------|---------|
-| SHA | `b9a30ea` | Immutable reference to exact commit |
-| `latest` | `latest` | Rolling tag for current production version |
-
-**Best practice:** Always tag with commit SHA for traceability. The `latest` tag is convenient for deployments but SHA tags let you roll back to any specific version.
 
 #### Build and Push
 
 ```yaml
-- uses: docker/build-push-action@v7
+- uses: docker/bake-action@v6
+  env:
+    IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+    TAG: ${{ github.sha }}
+    PUSH_LATEST: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    GHA_CACHE: true
   with:
-    context: .
-    file: ${{ matrix.dockerfile }}
+    source: .
+    files: docker/docker-bake.hcl
     push: ${{ github.event_name != 'pull_request' }}
-    tags: ${{ steps.meta.outputs.tags }}
-    labels: ${{ steps.meta.outputs.labels }}
-    cache-from: type=gha
-    cache-to: type=gha,mode=max
 ```
 
-| Parameter | Value | Purpose |
-|-----------|-------|---------|
-| `context` | `.` | Build context is repository root |
-| `file` | `docker/Dockerfile.*` | Path to Dockerfile |
-| `push` | `true` (except PRs) | Push to registry |
-| `cache-from/to` | `type=gha` | Use GitHub Actions cache |
+The environment variables set the bake file's variables:
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `TAG` | Full commit SHA | Immutable tag naming the exact build; the deploy job uses it |
+| `PUSH_LATEST` | `true` on main | Also tag `latest`, for pulling the current version by hand |
+| `GHA_CACHE` | `true` | Cache layers in the GitHub Actions cache, one scope per image |
 
 **Key behaviour:** `push: ${{ github.event_name != 'pull_request' }}` means:
 - On push to main → push images to GHCR
-- On pull request → build only (validates Dockerfile works, doesn't pollute registry)
+- On pull request → build only (validates the Dockerfiles and dependencies, doesn't pollute the registry)
 
-**Why caching matters:**
-```yaml
-cache-from: type=gha
-cache-to: type=gha,mode=max
+**Why caching matters:** Docker layer caching dramatically speeds up builds. If only application code changed (not dependencies), cached layers for dependency installs are reused. A full build might take 5 minutes; a cached build takes 30 seconds.
+
+To build the same images locally (loaded into Docker, nothing pushed):
+
+```bash
+docker buildx bake -f docker/docker-bake.hcl --load
 ```
 
-Docker layer caching dramatically speeds up builds. If only application code changed (not dependencies), cached layers for pip installs are reused. A full build might take 5 minutes; a cached build takes 30 seconds.
-
-## Job 4: Deploy
+## Job 3: Deploy
 
 ```yaml
 deploy:
-  needs: build-and-push
+  needs: build
   runs-on: ubuntu-latest
   if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+  concurrency:
+    group: deploy-ec2
+    cancel-in-progress: false
 ```
+
+### One Deploy at a Time
+
+All deploys share one concurrency group. When a deploy is already running, a newer one waits for it to finish instead of running alongside it. GitHub keeps at most one deploy waiting: a newer one replaces it, so the newest commit is always the one deployed last.
+
+**Why:** Deploys stop, prune and recreate the containers on a single host. Two at once collide (`Conflict. The container name ... is already in use`), which happened when several pull requests were merged in quick succession.
+
+### Pinned to the Commit
+
+The deploy steps receive the commit SHA as `IMAGE_TAG`. On the host the deploy:
+1. Checks out that commit (`git reset --hard "$IMAGE_TAG"`), so the compose file and Caddyfile match the images.
+2. Pulls the app images tagged with that SHA.
+3. Starts them: `docker-compose.prod.yml` uses `${IMAGE_TAG:-latest}` for each app image.
+
+**Why:** `latest` names whatever was pushed most recently, not a particular build. A SHA names exactly one build, so the running version is known.
+
+**Rolling back:** The SHA-tagged images stay in GHCR. To redeploy an earlier version, run `docker-compose -f docker-compose.prod.yml up -d` on the host with `IMAGE_TAG` set to that commit's full SHA, after checking that commit out.
 
 ### Conditional Execution
 
@@ -315,16 +267,16 @@ Each remote step then sends its script as the ssh command:
 cd ~/quant-finance || git clone https://github.com/koysor/quant-finance.git ~/quant-finance
 cd ~/quant-finance
 git fetch origin
-git reset --hard origin/main
+git reset --hard "$IMAGE_TAG"
 ```
 
 | Command | Purpose |
 |---------|---------|
 | `cd ... \|\| git clone ...` | Clone if doesn't exist, otherwise cd into it |
 | `git fetch origin` | Download latest commits without merging |
-| `git reset --hard origin/main` | Force local to match remote exactly |
+| `git reset --hard "$IMAGE_TAG"` | Check out exactly the commit being deployed |
 
-**Why `reset --hard`:** Ensures EC2 has exactly what's in the repository. Any local modifications are discarded. This prevents "works on my machine" issues where EC2 has stale or modified files.
+**Why `reset --hard` to the commit:** Ensures EC2 has exactly the compose file and Caddyfile of the commit whose images are being deployed, even if main has moved on since. Any local modifications are discarded. This prevents "works on my machine" issues where EC2 has stale or modified files.
 
 #### Stop Existing Containers
 
@@ -369,10 +321,9 @@ sudo rm -rf /tmp/* 2>/dev/null || true
 #### Pull Images
 
 ```bash
-docker pull ghcr.io/koysor/quant-finance/quant-finance:latest
-docker pull ghcr.io/koysor/quant-finance/options:latest
-docker pull ghcr.io/koysor/quant-finance/fixed-income:latest
-docker pull ghcr.io/koysor/quant-finance/portfolio-management:latest
+for app in quant-finance options fixed-income portfolio-management; do
+  docker pull "ghcr.io/koysor/quant-finance/$app:$IMAGE_TAG"
+done
 ```
 
 **Why explicit pulls:** While `docker-compose up` would pull images automatically, explicit pulls provide:
@@ -448,23 +399,20 @@ curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
 │  └────────┬─────────┘                                                        │
 │           │ needs                                                            │
 │           ▼                                                                  │
-│  ┌──────────────────┐                                                        │
-│  │  build-base      │  Build shared base image (Python deps + src/)          │
-│  │  (ubuntu-latest) │  Push to ghcr.io/koysor/quant-finance/base            │
-│  └────────┬─────────┘  ~3 minutes                                            │
-│           │ needs                                                            │
-│           ▼                                                                  │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                    build-and-push (matrix: 4 parallel jobs)           │   │
+│  │               build (one bake run, docker/docker-bake.hcl)            │   │
+│  │                     ┌───────────────────────────┐                     │   │
+│  │                     │ base (Python deps + src/) │                     │   │
+│  │                     └─────────────┬─────────────┘                     │   │
 │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐  │   │
 │  │  │quant-finance│ │   options   │ │ fixed-income│ │portfolio-mgmt   │  │   │
 │  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────────┘  │   │
-│  │                         ~5 minutes (parallel)                         │   │
+│  │        apps built on this run's base; tagged with the commit SHA      │   │
 │  └────────────────────────────────┬─────────────────────────────────────┘   │
 │                                   │ needs                                    │
 │                                   ▼                                          │
 │                          ┌──────────────────┐                                │
-│                          │     deploy       │  SSH → EC2                     │
+│                          │     deploy       │  SSH → EC2, one at a time      │
 │                          │ (ubuntu-latest)  │  Pull + Start + Health Check   │
 │                          └──────────────────┘  ~2 minutes                    │
 │                                                                              │
@@ -474,7 +422,7 @@ curl -f http://localhost:8504/_stcore/health && echo " Portfolio OK"
                                     ▼
                     ┌───────────────────────────────┐
                     │      ghcr.io/koysor/          │
-                    │      quant-finance/*:latest   │
+                    │   quant-finance/*:<sha>       │
                     └───────────────────────────────┘
                                     │
                                     │ pulled by
@@ -516,6 +464,6 @@ on:
 Duplicate the deploy job with different secrets:
 ```yaml
 deploy-staging:
-  needs: build-and-push
+  needs: build
   # ... use EC2_STAGING_HOST, EC2_STAGING_SSH_KEY
 ```
