@@ -49,6 +49,7 @@ module = [
     "quant_finance.options.*",
     "quant_finance.portfolio.*",
     "quant_finance.pricing.*",
+    "quant_finance.rates.*",
     "quant_finance.stochastic.*",
 ]
 disallow_untyped_defs = true

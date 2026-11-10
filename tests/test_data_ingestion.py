@@ -3,6 +3,7 @@
 yfinance is replaced with fakes, so these tests need no network.
 """
 
+import urllib.error
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -177,45 +178,101 @@ class TestRateLimiting:
         assert EquityFetcher(slow).rate_limiter is not EquityFetcher(fast).rate_limiter
 
 
+class FakeFred:
+    """Stand-in for treasury.fetch_fred_series.
+
+    Gives each series a distinct constant yield (1.0, 1.1, ...), so a tenor
+    labelled with another tenor's series shows up. Plays back exceptions
+    first, if any are given.
+    """
+
+    def __init__(self, *errors):
+        self.errors = list(errors)
+        self.calls = []
+
+    def __call__(self, series_ids, start, end, timeout=30.0):
+        self.calls.append(list(series_ids))
+        if self.errors:
+            raise self.errors.pop(0)
+        index = pd.date_range("2024-01-02", periods=3, name="Date")
+        return pd.DataFrame(
+            {series: 1.0 + 0.1 * i for i, series in enumerate(SERIES)},
+            index=index,
+        )[list(series_ids)]
+
+
+SERIES = list(FixedIncomeFetcher.TREASURY_SERIES.values())
+
+
+def patch_fred(monkeypatch, *errors):
+    fake = FakeFred(*errors)
+    monkeypatch.setattr(fixed_income.treasury, "fetch_fred_series", fake)
+    return fake
+
+
 class TestTreasuryTenors:
-    def test_every_tenor_has_its_own_series(self):
-        symbols = list(FixedIncomeFetcher.TREASURY_SYMBOLS.values())
+    def test_short_end_is_available(self):
+        # Yahoo Finance had no 6M, 1Y or 2Y index; FRED has every tenor
+        maturities = FixedIncomeFetcher(
+            DataIngestionConfig()
+        ).get_available_maturities()
+        assert {"1M", "6M", "1Y", "2Y", "7Y", "20Y"} <= set(maturities)
 
-        assert len(symbols) == len(set(symbols))
+    def test_unknown_tenor_is_rejected_before_fetching(self, monkeypatch, config):
+        fake = patch_fred(monkeypatch)
 
-    @pytest.mark.parametrize("maturity", ["6M", "1Y", "2Y"])
-    def test_tenors_without_a_series_are_rejected_before_fetching(
-        self, monkeypatch, config, maturity
-    ):
-        fake = patch_download(monkeypatch, fixed_income, ohlcv())
-
-        with pytest.raises(ValidationError, match=maturity):
+        with pytest.raises(ValidationError, match="4Y"):
             FixedIncomeFetcher(config).fetch_treasury_yields(
-                [maturity, "10Y"], START, END, use_cache=False
+                ["4Y", "10Y"], START, END, use_cache=False
             )
         assert fake.calls == []
 
     def test_yield_curve_labels_match_the_series_fetched(self, monkeypatch, config):
-        # Give each Yahoo symbol a distinct yield so a mislabelled tenor shows up
-        yields = {"^IRX": 5.2, "^FVX": 4.1, "^TNX": 4.3, "^TYX": 4.5}
-        downloaded = []
-
-        def fake_download(symbol, **kwargs):
-            downloaded.append(symbol)
-            return ohlcv(close=yields[symbol])
-
-        monkeypatch.setattr(fixed_income.yf, "download", fake_download)
+        fake = patch_fred(monkeypatch)
 
         curve = FixedIncomeFetcher(config).fetch_yield_curve(
             "2024-01-04", use_cache=False
         )
 
-        assert sorted(downloaded) == sorted(yields)
+        assert fake.calls == [SERIES]
         expected = {
-            maturity: yields[symbol]
-            for maturity, symbol in FixedIncomeFetcher.TREASURY_SYMBOLS.items()
+            tenor: 1.0 + 0.1 * SERIES.index(series)
+            for tenor, series in FixedIncomeFetcher.TREASURY_SERIES.items()
         }
-        assert dict(zip(curve["Maturity"], curve["Yield"])) == expected
+        assert dict(zip(curve["Maturity"], curve["Yield"])) == pytest.approx(expected)
+        assert curve["Years"].is_monotonic_increasing
+
+    def test_weekend_curve_uses_the_previous_business_day(self, monkeypatch, config):
+        patch_fred(monkeypatch)
+
+        # The fake has data for 2 to 4 January 2024; the 6th is a Saturday
+        curve = FixedIncomeFetcher(config).fetch_yield_curve(
+            "2024-01-06", use_cache=False
+        )
+        assert len(curve) == len(SERIES)
+
+    def test_unknown_series_is_not_retried(self, monkeypatch, config):
+        missing = urllib.error.HTTPError("url", 404, "Not Found", None, None)
+        fake = patch_fred(monkeypatch, missing)
+
+        with pytest.raises(SymbolNotFoundError):
+            FixedIncomeFetcher(config).fetch_treasury_yields(
+                ["10Y"], START, END, use_cache=False
+            )
+        assert len(fake.calls) == 1
+
+    def test_network_error_is_retried(self, monkeypatch, config):
+        fake = patch_fred(monkeypatch, urllib.error.URLError("timed out"))
+
+        yields = FixedIncomeFetcher(config).fetch_treasury_yields(
+            ["10Y"], START, END, use_cache=False
+        )
+        assert len(fake.calls) == 2
+        assert list(yields.columns) == ["10Y"]
+
+    def test_cache_key_names_the_source(self, config):
+        key = FixedIncomeFetcher(config)._build_cache_key(["10Y"], START, END)
+        assert key.startswith("fixedincome:fred:")
 
 
 class TestRetryOnException:
