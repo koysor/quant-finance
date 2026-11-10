@@ -7,7 +7,7 @@
 This is an educational quantitative finance repository with four interactive Streamlit applications:
 - **Quant Finance** - Stochastic processes, Greeks, volatility modelling, risk management
 - **Options** - Options pricing (Black-Scholes, binomial trees, payoff analysis)
-- **Fixed Income** - Fixed income securities (landing page only for now)
+- **Fixed Income** - Fixed income markets: the US Treasury yield curve, from live FRED data
 - **Portfolio Management** - Modern Portfolio Theory, CAPM, alpha analysis
 
 All applications are built with Streamlit and supported by the `quant_finance` library in `src/quant_finance/`.

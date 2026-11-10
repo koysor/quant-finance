@@ -336,7 +336,7 @@ print(calls[["Strike", "ImpliedVolatility", "Delta", "Gamma"]].head())
 
 ### 3. Fixed Income Data (`FixedIncomeFetcher`)
 
-Fetch US Treasury yields and yield curves from Yahoo Finance treasury indices.
+Fetch US Treasury par yields and yield curves from FRED (the Federal Reserve's constant-maturity Treasury series, H.15). No API key is needed. The download itself is `quant_finance.rates.treasury`, which the Streamlit apps use directly; `FixedIncomeFetcher` adds caching, rate limiting and retries.
 
 #### 3.1 Treasury Yields (Time Series)
 
@@ -347,25 +347,32 @@ from quant_finance.data_ingestion import FixedIncomeFetcher
 
 fetcher = FixedIncomeFetcher()
 
-# Fetch 10-year and 30-year treasury yields
+# Fetch 2-year and 10-year treasury yields
 yields = fetcher.fetch_treasury_yields(
-    maturities=["10Y", "30Y"], start_date="2024-01-01", end_date="2024-12-31"
+    maturities=["2Y", "10Y"], start_date="2024-01-01", end_date="2024-12-31"
 )
 
 print(yields.head())
 # Returns DataFrame with maturities as columns and dates as index
 ```
 
-**Available maturities and Yahoo Finance symbols:**
+**Available maturities and FRED series:**
 
-| Maturity | Yahoo Symbol | Description |
-|----------|-------------|-------------|
-| `3M` | `^IRX` | 13-week Treasury bill (discount basis) |
-| `5Y` | `^FVX` | 5-year Treasury yield |
-| `10Y` | `^TNX` | 10-year Treasury yield |
-| `30Y` | `^TYX` | 30-year Treasury yield |
+| Maturity | FRED series | Since |
+|----------|-------------|-------|
+| `1M` | `DGS1MO` | 2001 |
+| `3M` | `DGS3MO` | 1981 |
+| `6M` | `DGS6MO` | 1981 |
+| `1Y` | `DGS1` | 1962 |
+| `2Y` | `DGS2` | 1976 |
+| `3Y` | `DGS3` | 1962 |
+| `5Y` | `DGS5` | 1962 |
+| `7Y` | `DGS7` | 1969 |
+| `10Y` | `DGS10` | 1962 |
+| `20Y` | `DGS20` | 1993 (also 1962 to 1986) |
+| `30Y` | `DGS30` | 1977 |
 
-> **Note:** Yields are quoted in percent (4.25 means 4.25%). Yahoo Finance has no index for the 6M, 1Y or 2Y tenors, so they are not offered: asking for any maturity outside this table raises `ValidationError`. For those tenors use another source, such as FRED (`DGS6MO`, `DGS1`, `DGS2`).
+> **Note:** Yields are par yields in percent (4.25 means 4.25%), all on the same bond-equivalent basis, bills included, so the tenors can be compared directly. A tenor is NaN on dates outside its series. Asking for any maturity outside this table raises `ValidationError`. Data is daily; the latest value is usually from the previous business day.
 
 **Quantitative finance use cases:**
 
@@ -388,7 +395,8 @@ Fetch the yield curve for a specific date — yields across all available maturi
 # Get yield curve for a specific date
 curve = fetcher.fetch_yield_curve("2024-12-31")
 print(curve)
-# Returns DataFrame with columns: Maturity, Yield
+# Returns DataFrame with columns: Maturity ("2Y"), Years (2.0), Yield (percent)
+# On a weekend or holiday the previous business day's curve is returned
 ```
 
 **Quantitative finance use cases:**
@@ -399,7 +407,7 @@ print(curve)
 | **Interpolation (Bootstrapping)** | Fit Nelson-Siegel, Svensson, or cubic spline models to the observed curve |
 | **Relative Value Trading** | Identify rich/cheap points along the curve for butterfly and barbell trades |
 | **Scenario Analysis** | Stress-test portfolios under parallel shifts, steepening, or flattening scenarios |
-| **Swap Pricing** | Use the curve as the floating leg reference for interest rate swaps |
+| **Swap Spreads** | Compare swap rates (which float on SOFR) with Treasury yields of the same maturity |
 
 #### 3.3 Available Maturities
 
@@ -408,7 +416,7 @@ List all supported maturities.
 ```python
 maturities = fetcher.get_available_maturities()
 print(f"Available: {maturities}")
-# ['3M', '5Y', '10Y', '30Y']
+# ['1M', '3M', '6M', '1Y', '2Y', '3Y', '5Y', '7Y', '10Y', '20Y', '30Y']
 ```
 
 ---
@@ -474,7 +482,7 @@ manager.auto_cleanup_if_needed(max_expired_ratio=0.2, min_expired_count=10)
 |-------|-----------|------------|
 | `equity_cache` | `EquityFetcher` | `equity:v2:{symbol}:{start}:{end}:{interval}:{adj\|raw}` |
 | `options_cache` | `OptionsFetcher` | `options:v2:{symbol}:{expiration}` (calls and puts in one frame, with an `OptionType` column) |
-| `fixed_income_cache` | `FixedIncomeFetcher` | `fixedincome:{maturities}:{start}:{end}` |
+| `fixed_income_cache` | `FixedIncomeFetcher` | `fixedincome:fred:{maturities}:{start}:{end}` |
 
 ### Cache Location
 

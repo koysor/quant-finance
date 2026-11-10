@@ -8,7 +8,7 @@ This is a quantitative finance educational repository that demonstrates Python i
 
 1. **Quantitative Finance App** (`app_quant_finance/`) - Educational content covering stochastic processes, Greeks, volatility modelling, risk management, and mathematical finance concepts
 2. **Options App** (`app_options/`) - Focused on options pricing models including binomial trees, Black-Scholes, and option payoffs
-3. **Fixed Income App** (`app_fixed_income/`) - Fixed income securities (landing page only for now)
+3. **Fixed Income App** (`app_fixed_income/`) - Fixed income markets: the US Treasury yield curve, from live FRED data
 4. **Portfolio Management App** (`app_portfolio_management/`) - Modern Portfolio Theory, CAPM, and alpha analysis
 
 ## Architecture
@@ -25,7 +25,7 @@ The codebase follows a modular structure:
 
 - **`app_fixed_income/`** - Streamlit app for fixed income and bonds
   - `fixed_income.py` - Main entry point
-  - `pages/` - Not yet present; add fixed income pages here
+  - `pages/` - Treasury yield curve page (live data from FRED via `quant_finance.rates`)
 
 - **`app_portfolio_management/`** - Streamlit app for portfolio management
   - `portfolio_management.py` - Main entry point
@@ -36,6 +36,7 @@ The codebase follows a modular structure:
   - `options/` - Option and multi-leg strategy payoffs
   - `portfolio/` - Modern Portfolio Theory and CAPM (`mpt`, `capm`)
   - `stochastic/` - Simulated paths (GBM, Wiener process, random walk)
+  - `rates/` - US Treasury par yields from FRED and yield curve helpers (`treasury`); standard library and pandas only, so apps can use it without loading DuckDB or yfinance
   - `data_ingestion/` - Data fetching package with caching (DuckDB), rate limiting, and retry logic; provides `EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`
 
 - **`projects/`** - Portfolio projects; see `projects/README.md` for the required structure and write-up

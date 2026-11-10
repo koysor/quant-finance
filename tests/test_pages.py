@@ -8,11 +8,33 @@ pages, which the unit tests do not exercise.
 
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from quant_finance.rates import treasury
+
 ROOT = Path(__file__).parent.parent
 PAGES = sorted(ROOT.glob("app_*/pages/*.py")) + sorted(ROOT.glob("app_*/*.py"))
+
+
+def fake_fred_series(series_ids, start, end, timeout=30.0):
+    """Synthetic upward-sloping yields on business days, in place of FRED."""
+    index = pd.bdate_range(start, end, name="Date")
+    return pd.DataFrame(
+        {
+            series: 3.0 + 0.1 * i + np.zeros(len(index))
+            for i, series in enumerate(series_ids)
+        },
+        index=index,
+    )
+
+
+@pytest.fixture(autouse=True)
+def offline_fred(monkeypatch):
+    """Pages that download Treasury yields get synthetic data, not FRED's."""
+    monkeypatch.setattr(treasury, "fetch_fred_series", fake_fred_series)
 
 
 def test_pages_were_found():

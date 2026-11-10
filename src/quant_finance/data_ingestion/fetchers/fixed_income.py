@@ -1,13 +1,12 @@
 """
-Fixed income data fetcher using Yahoo Finance (yfinance).
+Fixed income data fetcher for US Treasury par yields (from FRED).
 
-Provides methods for fetching treasury yields, yield curves,
-and bond-related data.
+Provides methods for fetching treasury yields and yield curves, adding the
+package's caching, rate limiting and retries to ``quant_finance.rates.treasury``.
 """
 
 from typing import List, Optional
 import pandas as pd
-import yfinance as yf
 import logging
 from datetime import datetime, timedelta
 
@@ -15,39 +14,33 @@ from ..base.fetcher import BaseFetcher, window_is_closed
 from ..config import DataIngestionConfig
 from ..utils.validators import DataValidator
 from ..exceptions import NoDataError, ValidationError
+from ...rates import treasury
 
 logger = logging.getLogger(__name__)
 
 
 class FixedIncomeFetcher(BaseFetcher):
-    """Fetcher for fixed income data from Yahoo Finance.
+    """Fetcher for US Treasury par yields from FRED.
 
-    Supports treasury yields, yield curves, and bond indices
-    with automatic caching and rate limiting.
+    The yields are the Federal Reserve's constant-maturity Treasury (CMT)
+    series, in percent and all on the same bond-equivalent basis, so every
+    tenor from 1M to 30Y is directly comparable. Fetches are cached, rate
+    limited and retried.
 
     Example:
         >>> fetcher = FixedIncomeFetcher()
         >>> yields_df = fetcher.fetch_treasury_yields(
-        ...     maturities=["10Y", "30Y"],
+        ...     maturities=["2Y", "10Y"],
         ...     start_date="2023-01-01",
         ...     end_date="2023-12-31"
         ... )
     """
 
-    # Yahoo Finance symbols for treasury yields. Only tenors with their own
-    # index are listed: mapping a tenor to another tenor's series (as 2Y to
-    # the 5-year index) would put wrong numbers under the right label.
-    # Values are quoted in percent (4.25 means 4.25%). ^IRX is the 13-week
-    # bill rate on a discount basis; the others are bond-equivalent yields.
-    TREASURY_SYMBOLS = {
-        "3M": "^IRX",  # 13-week treasury bill
-        "5Y": "^FVX",  # 5-year treasury yield
-        "10Y": "^TNX",  # 10-year treasury yield
-        "30Y": "^TYX",  # 30-year treasury yield
-    }
+    # FRED series for each tenor (1M, 3M, 6M, 1Y, 2Y, 3Y, 5Y, 7Y, 10Y, 20Y, 30Y)
+    TREASURY_SERIES = treasury.TREASURY_SERIES
 
     def __init__(self, config: Optional[DataIngestionConfig] = None):
-        """Initialize fixed income fetcher.
+        """Initialise fixed income fetcher.
 
         Args:
             config: Configuration instance
@@ -60,66 +53,34 @@ class FixedIncomeFetcher(BaseFetcher):
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> pd.DataFrame:
-        """Fetch treasury yield data from Yahoo Finance.
+        """Fetch treasury par yields from FRED.
 
         Args:
             maturities: List of maturities (e.g., ['3M', '10Y', '30Y'])
             start_date: Start date (YYYY-MM-DD)
-            end_date: End date (YYYY-MM-DD)
+            end_date: End date (YYYY-MM-DD), included
 
         Returns:
-            DataFrame with treasury yields
+            DataFrame with one column of yields in percent per maturity
 
         Raises:
             ValidationError: If a maturity is not supported
-            NoDataError: If no data is returned for any maturity
+            NoDataError: If FRED returns no data for the range
 
-        Errors from yfinance are left to the base class to classify.
+        Errors from the download are left to the base class to classify (an
+        unknown series is an HTTP 404, which becomes SymbolNotFoundError).
         """
         _check_maturities(maturities)
-
-        # Set default date range if not provided
-        if not end_date:
-            end_date = datetime.now().strftime("%Y-%m-%d")
-        if not start_date:
-            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
 
         logger.info(
             f"Fetching treasury yields for {maturities} from {start_date} to {end_date}"
         )
-
-        # Fetch data for each maturity
-        data_frames = {}
-
-        for maturity in maturities:
-            symbol = self.TREASURY_SYMBOLS[maturity]
-
-            df = yf.download(
-                symbol,
-                start=start_date,
-                end=end_date,
-                interval="1d",
-                auto_adjust=True,
-                threads=False,
-                progress=False,
+        result = treasury.fetch_treasury_par_yields(maturities, start_date, end_date)
+        if result.dropna(how="all").empty:
+            raise NoDataError(
+                f"No treasury data returned for {maturities} "
+                f"from {start_date} to {end_date}"
             )
-
-            if df is None or df.empty:
-                logger.warning(f"No data returned for {maturity} ({symbol})")
-                continue
-
-            # Flatten multi-level columns if present
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-
-            # Use Close price as yield
-            data_frames[maturity] = df["Close"]
-
-        if not data_frames:
-            raise NoDataError(f"No treasury data returned for {maturities}")
-
-        # Combine into single DataFrame (concat Series horizontally)
-        result = pd.concat(data_frames, axis=1)
 
         logger.info(f"Fetched {len(result)} rows of treasury data")
         return result
@@ -145,6 +106,9 @@ class FixedIncomeFetcher(BaseFetcher):
     ) -> str:
         """Build cache key for fixed income data.
 
+        The key names the source, so entries cached from Yahoo Finance before
+        the switch to FRED are never read back.
+
         Args:
             maturities: List of maturities
             start_date: Start date
@@ -156,7 +120,7 @@ class FixedIncomeFetcher(BaseFetcher):
         maturities_str = ",".join(sorted(maturities))
         start_str = start_date or "default"
         end_str = end_date or "default"
-        return f"fixedincome:{maturities_str}:{start_str}:{end_str}"
+        return f"fixedincome:fred:{maturities_str}:{start_str}:{end_str}"
 
     def _ttl_seconds(self, end_date: Optional[str] = None, **kwargs) -> int:
         """Cache yields over a date range that has ended for longer.
@@ -199,17 +163,19 @@ class FixedIncomeFetcher(BaseFetcher):
         end_date: Optional[str] = None,
         use_cache: bool = True,
     ) -> pd.DataFrame:
-        """Fetch treasury yield data.
+        """Fetch treasury par yield data.
 
         Args:
-            maturities: List of maturities ('3M', '5Y', '10Y', '30Y')
+            maturities: Tenors from get_available_maturities()
                        Default: ['10Y', '30Y']
-            start_date: Start date in YYYY-MM-DD format (default: 1 year ago)
-            end_date: End date in YYYY-MM-DD format (default: today)
+            start_date: Start date in YYYY-MM-DD format (default: 1 year
+                before the end date)
+            end_date: End date in YYYY-MM-DD format, included (default: today)
             use_cache: Whether to use cached data if available
 
         Returns:
-            DataFrame with treasury yields in percent as columns
+            DataFrame with treasury yields in percent as columns, shortest
+            tenor first
 
         Raises:
             ValidationError: If a maturity is not supported or the dates are invalid
@@ -217,7 +183,7 @@ class FixedIncomeFetcher(BaseFetcher):
         Example:
             >>> fetcher = FixedIncomeFetcher()
             >>> yields = fetcher.fetch_treasury_yields(
-            ...     maturities=["10Y", "30Y"],
+            ...     maturities=["2Y", "10Y"],
             ...     start_date="2023-01-01",
             ...     end_date="2023-12-31"
             ... )
@@ -246,74 +212,76 @@ class FixedIncomeFetcher(BaseFetcher):
     def fetch_yield_curve(
         self, date: Optional[str] = None, use_cache: bool = True
     ) -> pd.DataFrame:
-        """Fetch yield curve for a specific date.
+        """Fetch the yield curve for a specific date.
+
+        On a weekend or holiday the curve is the one from the previous
+        business day.
 
         Args:
             date: Date in YYYY-MM-DD format (default: today)
             use_cache: Whether to use cache
 
         Returns:
-            DataFrame with maturity vs yield
+            DataFrame with columns Maturity (e.g. "2Y"), Years (2.0) and
+            Yield (percent), shortest maturity first
+
+        Raises:
+            NoDataError: If there are no yields in the 10 days up to the date
 
         Example:
             >>> fetcher = FixedIncomeFetcher()
-            >>> curve = fetcher.fetch_yield_curve("2023-12-31")
+            >>> curve = fetcher.fetch_yield_curve("2023-12-29")
             >>> print(curve)
         """
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
 
-        # Fetch all maturities for the date
-        all_maturities = self.get_available_maturities()
-
-        # Get a small date range around the target date
+        # Fetch a short range ending on the target date, long enough to span
+        # a holiday weekend
         target_date = datetime.strptime(date, "%Y-%m-%d")
-        start = (target_date - timedelta(days=5)).strftime("%Y-%m-%d")
-        end = (target_date + timedelta(days=1)).strftime("%Y-%m-%d")
+        start = (target_date - timedelta(days=10)).strftime("%Y-%m-%d")
 
         df = self.fetch_treasury_yields(
-            maturities=all_maturities,
+            maturities=self.get_available_maturities(),
             start_date=start,
-            end_date=end,
+            end_date=date,
             use_cache=use_cache,
         )
 
-        # Get the row closest to the target date
-        if date in df.index:
-            yields = df.loc[date]
-        else:
-            # Find nearest date
-            yields = df.iloc[-1]
+        try:
+            yields = treasury.curve_on(df, date)
+        except ValueError as error:
+            raise NoDataError(str(error)) from error
 
-        # Convert to DataFrame with maturity and yield columns
-        result = pd.DataFrame({"Maturity": yields.index, "Yield": yields.values})
-
-        return result
+        return pd.DataFrame(
+            {
+                "Maturity": yields.index,
+                "Years": [treasury.TENOR_YEARS[m] for m in yields.index],
+                "Yield": yields.values,
+            }
+        )
 
     def get_available_maturities(self) -> List[str]:
-        """Get list of available treasury maturities.
+        """Get list of available treasury maturities, shortest first.
 
         Returns:
             List of maturity strings
 
         Example:
             >>> fetcher = FixedIncomeFetcher()
-            >>> maturities = fetcher.get_available_maturities()
-            >>> print(maturities)
-            ['3M', '5Y', '10Y', '30Y']
+            >>> fetcher.get_available_maturities()
+            ['1M', '3M', '6M', '1Y', '2Y', '3Y', '5Y', '7Y', '10Y', '20Y', '30Y']
         """
-        return list(self.TREASURY_SYMBOLS.keys())
-
-
-def _check_maturities(maturities: List[str]) -> None:
-    """Raise ValidationError if any maturity has no data source."""
-    unknown = [m for m in maturities if m not in FixedIncomeFetcher.TREASURY_SYMBOLS]
-    if unknown:
-        raise ValidationError(
-            f"Unsupported maturities {unknown}; available: "
-            f"{list(FixedIncomeFetcher.TREASURY_SYMBOLS)}"
-        )
+        return list(self.TREASURY_SERIES.keys())
 
     def __repr__(self) -> str:
         """String representation."""
         return f"FixedIncomeFetcher(cache_table={self.cache_table})"
+
+
+def _check_maturities(maturities: List[str]) -> None:
+    """Raise ValidationError if any maturity has no data source."""
+    try:
+        treasury.check_maturities(maturities)
+    except ValueError as error:
+        raise ValidationError(str(error)) from error
