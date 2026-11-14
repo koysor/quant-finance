@@ -1,0 +1,99 @@
+# Zensical configuration for the library docs.
+# Build: uv run --group docs zensical build --strict   (output in site/)
+# Preview: uv run --group docs zensical serve
+# Published under /docs/ of the GitHub Pages site by deploy-marimo.yml.
+
+[project]
+site_name = "quant_finance"
+site_description = "The maths and the API of the quant_finance library"
+site_url = "https://koysor.github.io/quant-finance/docs/"
+repo_url = "https://github.com/koysor/quant-finance"
+repo_name = "koysor/quant-finance"
+edit_uri = "edit/main/docs/"
+# Kept apart from the marimo notebooks' _site, which the Pages workflow assembles.
+site_dir = "site"
+extra_javascript = [
+  "javascripts/mathjax.js",
+  "https://unpkg.com/mathjax@3.2.2/es5/tex-mml-chtml.js",
+]
+nav = [
+  { "Home" = "index.md" },
+  { "Conventions" = "conventions.md" },
+  { "Pricing" = [
+    { "Black-Scholes-Merton" = "pricing/black-scholes.md" },
+    { "Binomial trees" = "pricing/binomial.md" },
+    { "Put-call parity" = "pricing/parity.md" },
+  ] },
+  { "Options" = [
+    { "Payoffs and strategies" = "options/payoffs.md" },
+    { "Static arbitrage" = "options/arbitrage.md" },
+  ] },
+  { "Stochastic processes" = "stochastic/paths.md" },
+  { "Portfolio theory" = [
+    { "Modern Portfolio Theory" = "portfolio/mpt.md" },
+    { "CAPM" = "portfolio/capm.md" },
+  ] },
+  { "Rates" = [
+    { "Treasury yield curve" = "rates/treasury.md" },
+  ] },
+  { "Data ingestion" = "data-ingestion.md" },
+  { "References" = "references.md" },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "content.footnote.tooltips",
+  "navigation.instant",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "indigo"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+footnotes = {}
+tables = {}
+toc.permalink = true
+pymdownx.arithmatex.generic = true
+pymdownx.details = {}
+pymdownx.highlight = {}
+pymdownx.superfences = {}
+
+[project.plugins.mkdocstrings]
+default_handler = "python"
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+show_root_heading = false
+show_root_toc_entry = false
+show_source = true
+show_signature_annotations = true
+separate_signature = true
+signature_crossrefs = true
+members_order = "source"
+filters = ["!^_"]
+heading_level = 3
+merge_init_into_class = true
+show_if_no_docstring = false

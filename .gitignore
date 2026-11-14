@@ -23,3 +23,9 @@ app*/pages/*_.py
 
 # Coverage data
 .coverage
+
+# Docs build output (scripts/build_docs.sh)
+/site/
+
+# Hypothesis example database
+.hypothesis/

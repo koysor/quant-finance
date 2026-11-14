@@ -45,7 +45,9 @@ The codebase follows a modular structure:
   - `local/` - Notebooks that fetch live data or use `quant_finance`; not published. Import from `quant_finance` in one cell, create a single instance of each fetcher needed (`EquityFetcher`, `OptionsFetcher`, `FixedIncomeFetcher`; API in `src/quant_finance/data_ingestion/README.md`), give each fetch its own name (e.g. `df_tsla`), and add a row with its `uv run marimo edit` command to the local table in `notebooks/README.md`
   - New published notebooks: use the `new-notebook` skill; general marimo rules are in the shared `koysor-skills:marimo-helper` skill (from `repo-tools`)
 
-- **`tests/`** - pytest suite for the library
+- **`tests/`** - pytest suite for the library. Besides example-based tests, `test_pricing_properties.py` and `test_portfolio_properties.py` use Hypothesis to check relationships that must hold for every input (no-arbitrage bounds, parity, put-call symmetry, scaling, convexity, the Black-Scholes PDE, the implied density), and `test_numerical_convergence.py` checks published reference values (Haug), the binomial tree's 1/n convergence and Monte Carlo against Black-Scholes. A new model should get the same three kinds of test: reference values from an independent source, properties, and convergence for anything numerical. Scale tolerances to the size of the inputs, and seed every random test
+
+- **`docs/`** + `zensical.toml` - Library docs, built with Zensical and mkdocstrings, published at https://koysor.github.io/quant-finance/docs/ by `deploy-marimo.yml`. One page per module: the model, its assumptions, formulas in LaTeX (`\( \)` inline, `\[ \]` display) and references as footnotes, then `::: quant_finance.<module>` for the API generated from the docstrings. Add or update the page when you add or change a model. Build with `scripts/build_docs.sh`, which CI runs: it runs `zensical build --strict` and also fails on griffe warnings about docstrings or missing annotations, which Zensical's strict mode only prints. Preview with `uv run --group docs zensical serve`. Output goes to `site/` (ignored); the Pages workflow copies it to `_site/docs/`
 
 ## Development Commands
 
@@ -94,10 +96,10 @@ uv run pre-commit run --all-files  # Run hooks manually on all files
 
 ### CI/CD
 - **GitHub Actions** workflows:
-  - `code-quality.yml` - Validates ruff formatting, ruff linting and mypy types on push/PR
+  - `code-quality.yml` - Validates ruff formatting, ruff linting and mypy types, and builds the docs with `scripts/build_docs.sh`, on push/PR
   - `tests.yml` - Runs pytest on push/PR
   - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
-  - `deploy-marimo.yml` - Exports marimo notebooks to WASM and deploys to GitHub Pages
+  - `deploy-marimo.yml` - Exports marimo notebooks to WASM, builds the library docs into `/docs/`, and deploys both to GitHub Pages
 - **Pre-commit hooks** - Local code quality enforcement (detect-secrets, ruff check, ruff format)
 
 ### Environment
