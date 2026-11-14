@@ -1,4 +1,4 @@
-name: Deploy Marimo to GitHub Pages
+name: Deploy notebooks and docs to GitHub Pages
 
 on:
   push:
@@ -38,6 +38,11 @@ jobs:
             uv run marimo export html-wasm "$notebook" -o "_site/${name}-edit.html" --mode edit
           done
 
+      - name: Build library docs into /docs/
+        run: |
+          scripts/build_docs.sh
+          cp -r site _site/docs
+
       - name: Create index page
         run: |
           cat > _site/index.html << 'EOF'
@@ -58,6 +63,7 @@ jobs:
           </head>
           <body>
             <h1>Quant Finance Notebooks</h1>
+            <p><a href="docs/">Library documentation</a>: the maths and the API of quant_finance</p>
             <ul>
           EOF
           for notebook in notebooks/*.py; do

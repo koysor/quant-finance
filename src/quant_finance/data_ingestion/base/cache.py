@@ -43,7 +43,7 @@ class BaseCache(ABC):
         data: pd.DataFrame,
         table: str,
         ttl_seconds: int,
-        **metadata,
+        **metadata: Any,
     ) -> None:
         """Store data in cache.
 

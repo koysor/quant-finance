@@ -220,7 +220,7 @@ class DuckDBCache(BaseCache):
         data: pd.DataFrame,
         table: str,
         ttl_seconds: int,
-        **metadata,
+        **metadata: Any,
     ) -> None:
         """Store data in cache.
 
