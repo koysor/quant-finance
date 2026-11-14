@@ -1,6 +1,6 @@
 # CAPM
 
-`quant_finance.portfolio.capm` gives expected returns under the Capital Asset Pricing Model, and Jensen's alpha against them.[^sharpe][^lintner]
+`quant_finance.portfolio.capm` gives expected returns under the Capital Asset Pricing Model, and Jensen's alpha against them.[^sharpe]<sup>,</sup>[^lintner]
 
 ## The model
 

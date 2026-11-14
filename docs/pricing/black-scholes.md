@@ -1,6 +1,6 @@
 # Black-Scholes-Merton
 
-`quant_finance.pricing.black_scholes` prices European calls and puts on a stock that pays a continuous dividend yield, together with their Greeks and implied volatility. With \(q = 0\) these are the original Black-Scholes formulas.[^bs][^merton]
+`quant_finance.pricing.black_scholes` prices European calls and puts on a stock that pays a continuous dividend yield, together with their Greeks and implied volatility. With \(q = 0\) these are the original Black-Scholes formulas.[^bs]<sup>,</sup>[^merton]
 
 ## Model
 
