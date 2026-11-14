@@ -1,6 +1,6 @@
 # Static arbitrage
 
-`quant_finance.options.arbitrage` checks a strip of same-expiry option prices for static arbitrage: trades put on today and held to expiry that cost nothing or less and can never lose. The checks hold whatever the model.[^merton][^cm]
+`quant_finance.options.arbitrage` checks a strip of same-expiry option prices for static arbitrage: trades put on today and held to expiry that cost nothing or less and can never lose. The checks hold whatever the model.[^merton]<sup>,</sup>[^cm]
 
 ## Conditions
 
