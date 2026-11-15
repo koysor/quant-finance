@@ -56,22 +56,22 @@ The codebase follows a modular structure:
 # Quantitative Finance Streamlit app
 ./launch_quantfinance_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && uv run streamlit run app_quant_finance/quantitative_finance.py
+uv run streamlit run app_quant_finance/quantitative_finance.py
 
 # Options Streamlit app
 ./launch_options_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && uv run streamlit run app_options/options.py
+uv run streamlit run app_options/options.py
 
 # Fixed Income Streamlit app
 ./launch_fixed_income_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && uv run streamlit run app_fixed_income/fixed_income.py
+uv run streamlit run app_fixed_income/fixed_income.py
 
 # Portfolio Management Streamlit app
 ./launch_portfolio_management_streamlit_app.sh
 # or manually:
-source .venv/bin/activate && uv run streamlit run app_portfolio_management/portfolio_management.py
+uv run streamlit run app_portfolio_management/portfolio_management.py
 ```
 
 ### Code Quality
