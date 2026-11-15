@@ -131,10 +131,18 @@ echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 
 ### "No space left on device"
 
-**Cause:** Docker images filling up disk.
+**Cause:** The root volume is only 8 GB. Each deploy already prunes old Docker images and the build cache, so the usual causes are a large systemd journal or package cache, or images left from a manual run.
 
-**Fix:**
+**Check without SSH:** run the **EC2 disk report** workflow (`gh workflow run ec2-disk-report.yml`). It only reads, and prints filesystem, Docker, journal and directory sizes to the run summary.
+
+**Fix without SSH:** run the **EC2 disk cleanup** workflow (`gh workflow run ec2-disk-cleanup.yml`). It trims the journal and caps it at 100M (`/etc/systemd/journald.conf.d/size.conf`), clears the dnf cache, and removes unused Docker volumes, keeping `caddy_data`. In November 2026 this freed about 0.8 GB.
+
+**Fix by hand (over SSH):**
 ```bash
+# Shrink the systemd journal and clear the package cache
+sudo journalctl --vacuum-size=100M
+sudo dnf clean all
+
 # Remove unused images
 sudo docker system prune -a
 

@@ -28,6 +28,7 @@ The core of the project includes a sophisticated data ingestion module that fetc
     # To run the portfolio management app
     ./launch_portfolio_management_streamlit_app.sh
     ```
+    On Windows, run them through Git Bash; [LAUNCH_README.md](LAUNCH_README.md) has a PowerShell command for each.
 
 ### Docker
 
@@ -51,5 +52,11 @@ The applications will be available at the following ports:
     *   **Loop Variables:** Prefix loop and temporary variables with underscores (e.g., `for _sym, _df in multi_data.items():`) to make them local to the cell and prevent conflicts.
     *   **Reactive Flow:** Ensure all required global variables are passed as arguments to the cell functions.
 *   **Testing:** Unit tests are in the `tests/` directory. Run them with `uv run pytest tests/ -v --tb=short`. The `tests/test_option_payoffs.py` module provides coverage for option payoff calculations.
-*   **CI/CD:** A GitHub Actions workflow (`.github/workflows/code-quality.yml`) automatically checks for code quality on every push and pull request to the `main` branch. Additionally, `.github/workflows/tests.yml` runs unit tests.
+*   **CI/CD:** GitHub Actions workflows in `.github/workflows/`:
+    *   `code-quality.yml` checks ruff formatting, ruff linting and mypy types, and builds the docs, on every push and pull request.
+    *   `tests.yml` runs the pytest suite on every push and pull request.
+    *   `deploy-ec2.yml` builds the Docker images and deploys them to EC2.
+    *   `deploy-marimo.yml` exports the marimo notebooks to WebAssembly, builds the library docs, and deploys both to GitHub Pages.
+    *   `ec2-disk-report.yml` (manual only) reports disk usage on the EC2 host without changing anything.
+    *   `ec2-disk-cleanup.yml` (manual only) trims the systemd journal and caps it at 100M, clears the dnf cache, and removes unused Docker volumes except `caddy_data`.
 *   **Dependencies:** Project dependencies are managed in the `pyproject.toml` file.

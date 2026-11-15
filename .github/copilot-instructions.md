@@ -207,6 +207,8 @@ st.pyplot(fig)
 - **tests.yml** - Runs pytest suite on push/PR to main
 - **deploy-ec2.yml** - Deploys applications to AWS EC2
 - **deploy-marimo.yml** - Deploys Marimo notebooks to GitHub Pages
+- **ec2-disk-report.yml** - Manual, read-only disk usage report for the EC2 host
+- **ec2-disk-cleanup.yml** - Manual EC2 disk cleanup (journal, dnf cache, unused Docker volumes)
 
 Pre-commit hooks run locally on commit:
 - Ruff (linting with auto-fix, and formatting)

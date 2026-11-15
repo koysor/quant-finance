@@ -52,6 +52,8 @@ The codebase follows a modular structure:
 ## Development Commands
 
 ### Running Applications
+On Windows, run the launch scripts through Git Bash; [LAUNCH_README.md](LAUNCH_README.md) has a PowerShell command for each.
+
 ```bash
 # Quantitative Finance Streamlit app
 ./launch_quantfinance_streamlit_app.sh
@@ -100,6 +102,8 @@ uv run pre-commit run --all-files  # Run hooks manually on all files
   - `tests.yml` - Runs pytest on push/PR
   - `deploy-ec2.yml` - Builds Docker images and deploys to EC2
   - `deploy-marimo.yml` - Exports marimo notebooks to WASM, builds the library docs into `/docs/`, and deploys both to GitHub Pages
+  - `ec2-disk-report.yml` - Manual only: read-only disk usage report for the EC2 host (filesystems, Docker, journal, largest directories)
+  - `ec2-disk-cleanup.yml` - Manual only: trims the systemd journal and caps it at 100M, clears the dnf cache, and removes unused Docker volumes except `caddy_data`
 - **Pre-commit hooks** - Local code quality enforcement (detect-secrets, ruff check, ruff format)
 
 ### Environment
