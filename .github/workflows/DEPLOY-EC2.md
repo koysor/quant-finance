@@ -297,14 +297,14 @@ docker-compose down --remove-orphans 2>/dev/null || true
 #### Disk Cleanup
 
 ```bash
-docker system prune -af --volumes || true
+docker system prune -af || true
 docker builder prune -af || true
 sudo rm -rf /tmp/* 2>/dev/null || true
 ```
 
 | Command | Purpose |
 |---------|---------|
-| `docker system prune -af --volumes` | Remove all unused images, containers, volumes |
+| `docker system prune -af` | Remove all unused images, containers and networks (not volumes, so `caddy_data` and its certificates survive) |
 | `docker builder prune -af` | Remove build cache |
 | `rm -rf /tmp/*` | Clear temporary files |
 
@@ -314,7 +314,8 @@ sudo rm -rf /tmp/* 2>/dev/null || true
 |------|---------|
 | `-a` | Remove all unused images (not just dangling) |
 | `-f` | Force, don't prompt for confirmation |
-| `--volumes` | Also remove unused volumes |
+
+This only covers Docker. For the rest of the disk, two manual workflows use the same SSH setup: `ec2-disk-report.yml` reports usage without changing anything, and `ec2-disk-cleanup.yml` trims the systemd journal (capping it at 100M), clears the dnf cache and removes unused Docker volumes except `caddy_data`. See [TROUBLESHOOTING.md](../../docker/TROUBLESHOOTING.md#no-space-left-on-device).
 
 **Best practice:** Clean up before pulling new images, not after. This ensures maximum space is available for the pull operation.
 

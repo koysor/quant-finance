@@ -22,6 +22,8 @@ uv run mypy src/quant_finance          # Check types
 ./launch_options_streamlit_app.sh      # Launch an app
 ```
 
+On Windows, see [LAUNCH_README.md](LAUNCH_README.md) for running the launch scripts from PowerShell.
+
 ## Key Technologies
 
 ### Data and Numerical Processing
