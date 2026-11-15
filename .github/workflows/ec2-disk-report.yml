@@ -1,0 +1,79 @@
+name: EC2 disk report
+
+# Read-only: reports disk usage on the EC2 host and deletes nothing.
+# Run it from the Actions tab (or `gh workflow run ec2-disk-report.yml`).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2
+          chmod 600 ~/.ssh/ec2
+          cat >> ~/.ssh/config <<EOF
+          Host ec2
+            HostName $EC2_HOST
+            User ec2-user
+            IdentityFile ~/.ssh/ec2
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+            ConnectionAttempts 3
+          EOF
+
+      - name: Report disk usage
+        timeout-minutes: 10
+        run: |
+          script=$(cat <<'REMOTE'
+          section() { printf '\n===== %s =====\n' "$1"; }
+
+          section "Filesystems"
+          df -h -x tmpfs -x devtmpfs
+
+          section "Inodes"
+          df -i -x tmpfs -x devtmpfs
+
+          section "Docker summary"
+          docker system df
+
+          section "Docker images"
+          docker images --format 'table {{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}'
+
+          section "Docker volumes"
+          docker system df -v | sed -n '/^Local Volumes space usage:/,/^Build cache usage:/p'
+
+          section "Container log files (largest first)"
+          sudo sh -c 'du -sh /var/lib/docker/containers/*/*-json.log 2>/dev/null' | sort -rh | head -n 10
+
+          section "Largest directories under / (one filesystem)"
+          sudo du -xh --max-depth=2 / 2>/dev/null | sort -rh | head -n 25
+
+          section "Home directory"
+          du -sh ~/* ~/.[!.]* 2>/dev/null | sort -rh | head -n 15
+
+          section "Systemd journal"
+          sudo journalctl --disk-usage
+
+          section "Package manager cache"
+          sudo du -sh /var/cache/dnf /var/cache/yum 2>/dev/null || true
+          REMOTE
+          )
+          ssh -n ec2 "$script" | tee report.txt
+          {
+            echo '## EC2 disk report'
+            echo '```'
+            cat report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
