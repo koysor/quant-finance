@@ -1,0 +1,78 @@
+name: EC2 disk cleanup
+
+# Frees disk space on the EC2 host: trims the systemd journal and caps it at
+# 100M, clears the dnf cache, and removes unused Docker volumes other than
+# caddy_data (the HTTPS certificates). Run it from the Actions tab (or
+# `gh workflow run ec2-disk-cleanup.yml`). See ec2-disk-report.yml to check
+# usage first.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2
+          chmod 600 ~/.ssh/ec2
+          cat >> ~/.ssh/config <<EOF
+          Host ec2
+            HostName $EC2_HOST
+            User ec2-user
+            IdentityFile ~/.ssh/ec2
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+            ConnectionAttempts 3
+          EOF
+
+      - name: Clean up disk
+        timeout-minutes: 10
+        run: |
+          script=$(cat <<'REMOTE'
+          set -e
+          section() { printf '\n===== %s =====\n' "$1"; }
+
+          section "Before"
+          df -h /
+          sudo journalctl --disk-usage
+
+          section "Cap the journal at 100M"
+          sudo install -d /etc/systemd/journald.conf.d
+          printf '[Journal]\nSystemMaxUse=100M\n' | sudo tee /etc/systemd/journald.conf.d/size.conf
+          sudo systemctl restart systemd-journald
+          sudo journalctl --vacuum-size=100M
+
+          section "Clear the dnf cache"
+          sudo dnf clean all
+
+          section "Remove unused Docker volumes (keeping caddy_data)"
+          for v in $(docker volume ls -q -f dangling=true); do
+            if [ "$v" != caddy_data ]; then
+              docker volume rm "$v"
+            fi
+          done
+
+          section "After"
+          df -h /
+          sudo journalctl --disk-usage
+          docker volume ls
+          REMOTE
+          )
+          ssh -n ec2 "$script" | tee report.txt
+          {
+            echo '## EC2 disk cleanup'
+            echo '```'
+            cat report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
