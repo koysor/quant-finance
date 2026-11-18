@@ -58,7 +58,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build images (and push them, except for pull requests)
-        uses: docker/bake-action@v6
+        uses: docker/bake-action@v7
         env:
           IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
           # Every image is tagged with the full commit SHA; deploy uses that tag
