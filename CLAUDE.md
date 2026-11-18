@@ -49,6 +49,8 @@ The codebase follows a modular structure:
 
 - **`docs/`** + `zensical.toml` - Library docs, built with Zensical and mkdocstrings, published at https://koysor.github.io/quant-finance/docs/ by `deploy-marimo.yml`. One page per module: the model, its assumptions, formulas in LaTeX (`\( \)` inline, `\[ \]` display) and references as footnotes, then `::: quant_finance.<module>` for the API generated from the docstrings. Add or update the page when you add or change a model. Build with `scripts/build_docs.sh`, which CI runs: it runs `zensical build --strict` and also fails on griffe warnings about docstrings or missing annotations, which Zensical's strict mode only prints. Preview with `uv run --group docs zensical serve`. Output goes to `site/` (ignored); the Pages workflow copies it to `_site/docs/`
 
+- **Notation guide** - `maths-python/docs/notation.md` (in the sibling `maths-python` repo) is the guide to all mathematical notation used in maths-python, quant-finance and a private study-notes repo. **Every code change in this repo must check it.** If the change adds a symbol, removes the last use of one, or gives a symbol a new meaning (in code, docstrings, `docs/`, app pages or notebooks), update the guide in a separate commit in `maths-python`. If nothing changed, say so when reporting the change. `docs/conventions.md` stays the source for units and the scaling of the Greeks, and the guide must agree with it. Both repos are public, so never name the private repo in either
+
 ## Development Commands
 
 ### Running Applications
