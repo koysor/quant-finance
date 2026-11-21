@@ -157,8 +157,10 @@ jobs:
           # Pull maths-python image (prune -af removes it since it runs outside this compose project)
           docker pull ghcr.io/koysor/maths-python:latest
 
-          # Pull flash cards image (same reason: it runs in its own compose project)
-          docker pull ghcr.io/koysor/quant-finance-flash-cards:latest || true
+          # Caddy mounts the pre-rendered flash cards site from here (published by
+          # the quant-finance-flash-cards deploy).  Create it before compose up,
+          # or Docker creates it owned by root and that deploy cannot write to it.
+          mkdir -p ~/flashcards-site
 
           # Start services with this commit's images (IMAGE_TAG is read by
           # docker-compose.prod.yml)
@@ -170,12 +172,6 @@ jobs:
           cd ~/maths-python/docker
           docker-compose -f docker-compose.prod.yml up -d
 
-          # Restart flash cards, only once it has been set up on this host (docker/.env exists)
-          if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
-            cd ~/quant-finance-flash-cards && git fetch origin && git reset --hard origin/main
-            cd docker
-            docker-compose -f docker-compose.prod.yml up -d
-          fi
           REMOTE
           )
           ssh -n ec2 "$script"
@@ -213,10 +209,11 @@ jobs:
           cd ~/maths-python/docker
           docker-compose -f docker-compose.prod.yml exec -T maths-python curl -f http://localhost:8501/maths/_stcore/health && echo " Maths Python OK"
 
-          # Check flash cards health endpoint (skipped until it has been set up on this host)
-          if [ -f ~/quant-finance-flash-cards/docker/.env ]; then
-            cd ~/quant-finance-flash-cards/docker
-            docker-compose -f docker-compose.prod.yml exec -T flashcards curl -f http://localhost:8000/ > /dev/null && echo " Flash Cards OK"
+          # Flash cards are static files served by Caddy (skipped until the
+          # quant-finance-flash-cards deploy has published a site here)
+          if [ -e ~/flashcards-site/current ]; then
+            curl -sf -o /dev/null --resolve koysor.duckdns.org:443:127.0.0.1 https://koysor.duckdns.org/flashcards/ && echo " Flash Cards OK"
+            curl -sf -o /dev/null --resolve koysor.duckdns.org:443:127.0.0.1 https://koysor.duckdns.org/flashcards/graph && echo " Flash Cards graph OK"
           fi
 
           # Check Caddy is responding on port 80

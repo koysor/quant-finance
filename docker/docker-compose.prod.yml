@@ -20,6 +20,10 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      # Pre-rendered flash cards site, published by the
+      # quant-finance-flash-cards deploy.  The deploy workflow creates the
+      # directory first, so Docker does not create it owned by root.
+      - ${HOME}/flashcards-site:/srv/flashcards-site:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

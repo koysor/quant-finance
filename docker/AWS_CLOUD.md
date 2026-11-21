@@ -82,7 +82,7 @@ If the instance is stopped, the deploy job fails at the SSH step with `dial tcp 
 | Maths Python         | https://koysor.duckdns.org/maths/        |
 | Flash Cards          | https://koysor.duckdns.org/flashcards/   |
 
-The bare root (`https://koysor.duckdns.org/`) permanently redirects to `/quant/`. Flash Cards is a Flask app deployed from the `quant-finance-flash-cards` repository (host port 8506); see its `docker/README.md`.
+The bare root (`https://koysor.duckdns.org/`) permanently redirects to `/quant/`. Flash Cards is a static site: the `quant-finance-flash-cards` deploy renders it and publishes it to `~/flashcards-site/releases/<sha>` on the instance, with `current` a symlink to the live release. Caddy mounts `~/flashcards-site` read-only and serves it with `file_server`. To roll back, point `current` at an older release (`ln -sfn releases/<sha> current.tmp && mv -T current.tmp current`); no restart is needed.
 
 ## Deployment Method
 
