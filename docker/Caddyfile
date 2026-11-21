@@ -25,16 +25,20 @@ koysor.duckdns.org {
 	# Flash cards are pre-rendered by the quant-finance-flash-cards deploy into
 	# ~/flashcards-site/releases/<sha>, with "current" a symlink to the live one
 	# (mounted read-only, see docker-compose.prod.yml).  /a/b is the file
-	# a/b.html; the index, graph and other large pages have .zst/.gz copies.
+	# a/b.html.  Compression is left to `encode` above: file_server's
+	# `precompressed` makes Caddy 2.10 answer 206 Partial Content to
+	# ordinary requests.
 	handle_path /flashcards/* {
 		root * /srv/flashcards-site/current
+		# Only the root is a directory page; without this the "index" tag's
+		# page would also answer /flashcards/tag/.
+		@subdir path_regexp ^/.+/$
+		error @subdir 404
 		@pages not path /static/*
 		header @pages Cache-Control "public, max-age=300"
 		header /static/* Cache-Control "public, max-age=31536000, immutable"
 		try_files {path} {path}.html
-		file_server {
-			precompressed zstd gzip
-		}
+		file_server
 	}
 
 	# Unknown flash card URLs get the site's own 404 page, which also finds a
