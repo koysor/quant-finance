@@ -9,7 +9,8 @@ Hypothesis to search for counterexamples:
 - the Black-Scholes PDE, satisfied by the library's own Greeks;
 - the risk-neutral density implied by the prices (Breeden-Litzenberger);
 - implied volatility recovering the volatility used to price;
-- binomial trees: exact parity on the tree, American >= European >= 0.
+- binomial trees: exact parity on the tree, American >= European >= 0, and
+  the hedge at every node replicating the option over the next step.
 
 Tolerances are relative to the size of the prices involved, because the
 inputs span several orders of magnitude.
@@ -23,7 +24,7 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from scipy.stats import norm
 
-from quant_finance.pricing.binomial import binomial_price
+from quant_finance.pricing.binomial import binomial_lattice, binomial_price
 from quant_finance.pricing.black_scholes import (
     black_scholes_delta,
     black_scholes_gamma,
@@ -298,3 +299,25 @@ def test_american_is_worth_at_least_european_and_intrinsic(params, option_type):
 def test_american_put_is_bounded_by_the_strike(params):
     S, K, T, r, sigma, q = params
     assert binomial_price(S, K, T, r, sigma, 200, "put", american=True, q=q) <= K + 1e-9
+
+
+@settings(max_examples=50, deadline=None)
+@given(tree_options(), option_types, st.booleans())
+def test_tree_hedge_replicates_every_node(params, option_type, american):
+    """Delta shares, with dividends reinvested, plus cash at r reach both successors."""
+    S, K, T, r, sigma, q = params
+    lattice = binomial_lattice(
+        S, K, T, r, sigma, 200, option_type, american=american, q=q
+    )
+    growth = math.exp(r * lattice.dt)
+    share_growth = math.exp(q * lattice.dt)
+    for step in range(200):
+        # Prices at the top of a high-volatility tree reach ~1e7 x S, so the
+        # tolerance scales with the largest price at this step, not with S
+        tol = 1e-9 * max(float(lattice.stock[step + 1].max()), K)
+        held = lattice.delta[step] * share_growth
+        cash = lattice.bond[step] * growth
+        up = held * lattice.stock[step + 1][:-1] + cash
+        down = held * lattice.stock[step + 1][1:] + cash
+        np.testing.assert_allclose(up, lattice.value[step + 1][:-1], rtol=0, atol=tol)
+        np.testing.assert_allclose(down, lattice.value[step + 1][1:], rtol=0, atol=tol)
