@@ -6,6 +6,7 @@ Each notebook is published in two versions from the same source file. **View** i
 
 | Notebook | View (read-only) | Code (editable) |
 |----------|------------------|-----------------|
+| Asset Returns: From Random Walk to Geometric Brownian Motion | [View](https://koysor.github.io/quant-finance/random_walk_to_geometric_brownian_motion.html) | [Edit code](https://koysor.github.io/quant-finance/random_walk_to_geometric_brownian_motion-edit.html) |
 | Distributions: Normal vs Lognormal | [View](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html) | [Edit code](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal-edit.html) |
 | Simulate Geometric Brownian Motion Paths | [View](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html) | [Edit code](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths-edit.html) |
 

@@ -78,6 +78,7 @@ Interactive Python notebooks are available via GitHub Pages at **https://koysor.
 
 These notebooks run entirely in your browser using WebAssembly (no server required). Each one is published in two versions: **view** is a read-only page showing only the outputs and interactive widgets, and **edit code** shows the Python code and lets you change and re-run it (changes are kept only in your browser):
 
+* Asset Returns: From Random Walk to Geometric Brownian Motion ([view](https://koysor.github.io/quant-finance/random_walk_to_geometric_brownian_motion.html) · [edit code](https://koysor.github.io/quant-finance/random_walk_to_geometric_brownian_motion-edit.html))
 * Distributions: Normal vs Lognormal ([view](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal.html) · [edit code](https://koysor.github.io/quant-finance/distributions_normal_vs_lognormal-edit.html))
 * Simulate Geometric Brownian Motion Paths ([view](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths.html) · [edit code](https://koysor.github.io/quant-finance/simulate_geometric_brownian_motion_paths-edit.html))
 
